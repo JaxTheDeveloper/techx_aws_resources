@@ -66,13 +66,13 @@ except Exception as e:
 ### Evidence Verification
 
 #### 1. CloudWatch Log Entry
-![bedrock cw logs](images/bedrock_cw_logs.png)
+![bedrock cw logs](images/bedrock_evidence/bedrock_cw_logs.png)
 
 **Commentary:** 
 The CloudWatch logs show successful `InvokeModel` and `Converse` operations. The logs confirm that the Bedrock service assumed the correct IAM execution role to retrieve data from the Knowledge Base and generate a response using the Nova Lite model.
 
 #### 2. Model Output & Citations
-![terminal_out](bedrock_boto3_output.png)
+![terminal_out](images/bedrock_evidence/bedrock_boto3_output.png)
 
 **Commentary:** 
 The terminal output confirms the model successfully formatted the mathematical definition of Matrix K in LaTeX. Furthermore, the `retrievedReferences` metadata provides the specific S3 URIs of the orbital mechanics textbooks used to ground the answer, completing the RAG requirements.
