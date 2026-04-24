@@ -223,5 +223,7 @@ These IAM policies follow the principle of least privilege by:
 - Restricting CloudWatch Logs permissions to specific Lambda function log groups
 - Separating read and write Lambda functions with distinct roles for better security and auditability
 
+![connect success](./images/lambda_evidence/connect_success.png)
+
 
 
