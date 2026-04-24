@@ -158,5 +158,70 @@ The Lambda function was executed using a test event. The function processed the 
 
 During execution, the function encountered a database connection issue. This indicates that the problem is related to network configuration rather than the Lambda code itself.
 
+---
+
+## 5. IAM Roles & Policies
+
+To ensure proper access control and logging, dedicated IAM roles were created for each Lambda function with least-privilege permissions.
+
+### Role: `lambda-rds-write-role`
+
+This role is attached to the **Operator_Command_API** Lambda function and grants permissions to connect to the RDS database and write logs to CloudWatch.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["rds-db:connect"],
+      "Resource": ["arn:aws:rds:us-west-2:ACCOUNT_ID:db:database-lab-w3"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:us-west-2:ACCOUNT_ID:log-group:/aws/lambda/Operator_Command_API:*"
+    }
+  ]
+}
+```
+
+### Role: `lambda-rds-read-role`
+
+This role is attached to the **Telemetry_Read_API** Lambda function and grants permissions to connect to the RDS database and write logs to CloudWatch.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["rds-db:connect"],
+      "Resource": ["arn:aws:rds:us-west-2:ACCOUNT_ID:db:database-lab-w3"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:us-west-2:ACCOUNT_ID:log-group:/aws/lambda/Telemetry_Read_API:*"
+    }
+  ]
+}
+```
+
+### Commentary
+
+These IAM policies follow the principle of least privilege by:
+- Granting only the necessary `rds-db:connect` permission for database access
+- Restricting CloudWatch Logs permissions to specific Lambda function log groups
+- Separating read and write Lambda functions with distinct roles for better security and auditability
+
 
 
