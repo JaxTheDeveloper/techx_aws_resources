@@ -256,7 +256,7 @@ This role is assumed by the `write-user` Lambda function. It requires write acce
 ---
 #### 3. DataAggregatorExecutionRole
 This policy governs the background worker responsible for aggregating historical telemetry and offloading it to long-term S3 storage.
-![data aggregator execution role](images/iam_evidence/aggregator_role.png)
+![data aggregator execution role](images/iam_evidence/aggerator_role.png)
 ```json
 {
   "Version": "2012-10-17",
