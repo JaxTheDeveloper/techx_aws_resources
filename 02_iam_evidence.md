@@ -11,6 +11,23 @@ To demonstrate production-ready governance, I implemented a Three-Tiered Surgica
 *   **Zero-Wildcard Mandate:** Performed a manual audit of all project policies to eliminate pattern-matching symbols (*). Every permission is now hard-scoped to explicit resource ARNs.
 *   **Zero-Key Handshake:** Implemented IAM Database Authentication for the RDS Proxy, ensuring that application code generates temporary SigV4 identity tokens via AWS STS rather than handling static passwords.
 *   **Network-Identity Pairing:** Integrated VPC Gateway Endpoints with S3 bucket policies, requiring both a verified IAM identity and a verified network location (VPC Endpoint ID) before data access is granted.
+---
+### Evidence Verification
+
+#### 1. Named IAM Users & Group Association
+![iam users](images/iam_evidence/Users.png)
+
+**Commentary:** The IAM console verifies that all team members (phong-dev, thanh-admin, vu-tester) are assigned unique, named identities. This fulfills the requirement to eliminate shared credentials, ensuring full auditability of every administrative action.
+
+#### 2. Functional Group Hierarchy
+![iam user groups](images/iam_evidence/UserGroups.png)
+
+**Commentary:** This screenshot confirms the implementation of our Job-Function Isolation model. By organizing users into Surgical groups, we ensure that permissions are inherited based on roles rather than individuals, simplifying the management of team member access.
+
+#### 3. Hard-Scoped Administrative Policies
+![surgical admins properties](images/iam_evidence/SurgicalAdminsProperties.png)
+
+**Commentary:** The policy summary for the SurgicalAdmins group demonstrates **Zero-Wildcard Compliance**. The policy is restricted to specific project roles and subnets, ensuring that infrastructure leads cannot touch resources outside of the project scope.
 
 ---
 
@@ -120,19 +137,237 @@ This policy provides a restricted, read-only identity used exclusively for opera
 
 ---
 
-### Evidence Verification
+### Compute Execution Roles (JSON)
 
-#### 1. Named IAM Users & Group Association
-![iam users](images/iam_evidence/Users.png)
+While the Functional Groups isolate human access, the Compute Execution Roles enforce our Zero-Wildcard mandate for the machine identities running our application logic (AWS Lambda). Each function acts under a strict Principle of Least Privilege, mapping to specific database users via IAM Authentication.
 
-**Commentary:** The IAM console verifies that all team members (phong-dev, thanh-admin, vu-tester) are assigned unique, named identities. This fulfills the requirement to eliminate shared credentials, ensuring full auditability of every administrative action.
+#### 1. TelemetryReadExecutionRole
+This role is assumed by the `Telemetry_Read_API` Lambda function. It requires read-only access to the database and strict network boundaries to operate within the private VPC subnets.
+![telemetry read execution role](images/iam_evidence/telemetry_role.png)
 
-#### 2. Functional Group Hierarchy
-![iam user groups](images/iam_evidence/UserGroups.png)
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowSurgicalDBLogin",
+            "Effect": "Allow",
+            "Action": "rds-db:connect",
+            "Resource": "arn:aws:rds-db:us-west-2:062217319200:dbuser:prx-05b1fe369835614ca/telemetry_user"
+        },
+        {
+            "Sid": "AllowVPCDescribeOnly",
+            "Effect": "Allow",
+            "Action": "ec2:DescribeNetworkInterfaces",
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowVPCCreateDeleteEniStrict",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:Vpc": "arn:aws:ec2:us-west-2:062217319200:vpc/vpc-0d2fb0bbe57508bd3"
+                }
+            }
+        }
+    ]
+}
+```
+**Technical Commentary:** This policy demonstrates Compute-Level Separation of Duties. The Lambda function is restricted to authenticating purely as telemetry_user. Furthermore, ENI (Elastic Network Interface) creation is hard-scoped to the specific private subnets and the exact Security Group (sg-05380992383823482) assigned to the application tier. It cannot be deployed into or interact with the public subnets.
 
-**Commentary:** This screenshot confirms the implementation of our Job-Function Isolation model. By organizing users into Surgical groups, we ensure that permissions are inherited based on roles rather than individuals, simplifying the management of team member access.
+#### 2. OperatorCommandExecutionRole
+This role is assumed by the `write-user` Lambda function. It requires write access to the database and strict network boundaries to operate within the private VPC subnets.
+![operator command execution role](images/iam_evidence/operator_role.png)
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowSurgicalDBWriteLogin",
+            "Effect": "Allow",
+            "Action": "rds-db:connect",
+            "Resource": "arn:aws:rds-db:us-west-2:062217319200:dbuser:prx-05b1fe369835614ca/operator_user"
+        },
+        {
+            "Sid": "AllowVPCDescribeOnly",
+            "Effect": "Allow",
+            "Action": "ec2:DescribeNetworkInterfaces",
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowVPCCreateDeleteEniStrict",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:Vpc": "arn:aws:ec2:us-west-2:062217319200:vpc/vpc-0d2fb0bbe57508bd3"
+                }
+            }
+        }
+    ]
+}
+```
+**Technical Commentary:** This policy demonstrates Compute-Level Separation of Duties. The Lambda function is restricted to authenticating purely as operator_user. Furthermore, ENI (Elastic Network Interface) creation is hard-scoped to the specific private subnets and the exact Security Group (sg-05380992383823482) assigned to the application tier. It cannot be deployed into or interact with the public subnets.
 
-#### 3. Hard-Scoped Administrative Policies
-![surgical admins properties](images/iam_evidence/SurgicalAdminsProperties.png)
+---
+#### 3. DataAggregatorExecutionRole
+This policy governs the background worker responsible for aggregating historical telemetry and offloading it to long-term S3 storage.
+![data aggregator execution role](images/iam_evidence/aggregator_role.png)
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowSNSAlertPublishing",
+            "Effect": "Allow",
+            "Action": "sns:Publish",
+            "Resource": "arn:aws:sns:us-west-2:062217319200:System_Alerts_Topic"
+        },
+        {
+            "Sid": "AllowS3ListBucketViaVPCE",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::raw-telemetry-data",
+            "Condition": {
+                "StringEquals": {
+                    "aws:sourceVpce": "vpce-0c0d4537fade3f2a8"
+                }
+            }
+        },
+        {
+            "Sid": "AllowS3GetObjectViaVPCE",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::raw-telemetry-data/*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:sourceVpce": "vpce-0c0d4537fade3f2a8"
+                }
+            }
+        },
+        {
+            "Sid": "AllowVPCDescribeOnly",
+            "Effect": "Allow",
+            "Action": "ec2:DescribeNetworkInterfaces",
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowVPCCreateDeleteEniStrict",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateNetworkInterface",
+                "ec2:DeleteNetworkInterface"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "ec2:Vpc": "arn:aws:ec2:us-west-2:062217319200:vpc/vpc-0d2fb0bbe57508bd3"
+                }
+            }
+        }
+    ]
+}
+```
+**Technical Commentary:** This role exemplifies Cross-Service Prefix Scoping. The function connects to the proxy using the highly restricted logging_user database profile to read aggregates. Crucially, its S3 write permissions are confined strictly to the /aggregated_exports/* prefix inside the cold storage bucket, ensuring it cannot overwrite configuration files or raw telemetry stored in sibling prefixes.
 
-**Commentary:** The policy summary for the SurgicalAdmins group demonstrates **Zero-Wildcard Compliance**. The policy is restricted to specific project roles and subnets, ensuring that infrastructure leads cannot touch resources outside of the project scope.
+---
+
+#### 4. AnomalyLoggerExecutionRole
+This policy provides a high-integrity logging path for system anomalies. It consumes alerts from specific SQS queues and persists them to the database's logging schema.
+![anomaly logger execution role](images/iam_evidence/anomaly_logs_role.png)
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "AllowSQSMessageConsuming",
+			"Effect": "Allow",
+			"Action": [
+				"sqs:ReceiveMessage",
+				"sqs:DeleteMessage",
+				"sqs:GetQueueAttributes"
+			],
+			"Resource": [
+				"arn:aws:sqs:us-west-2:062217319200:CAPCOM_Alerts",
+				"arn:aws:sqs:us-west-2:062217319200:EECOM_Alerts",
+				"arn:aws:sqs:us-west-2:062217319200:FIDO_Alerts"
+			]
+		},
+		{
+			"Sid": "AllowSurgicalDBLogging",
+			"Effect": "Allow",
+			"Action": "rds-db:connect",
+			"Resource": "arn:aws:rds-db:us-west-2:062217319200:dbuser:prx-05b1fe369835614ca/logging_user"
+		},
+		{
+			"Sid": "AllowVPCDescribeOnly",
+			"Effect": "Allow",
+			"Action": "ec2:DescribeNetworkInterfaces",
+			"Resource": "*"
+		},
+		{
+			"Sid": "AllowVPCCreateDeleteEniStrict",
+			"Effect": "Allow",
+			"Action": [
+				"ec2:CreateNetworkInterface",
+				"ec2:DeleteNetworkInterface"
+			],
+			"Resource": "*",
+			"Condition": {
+				"StringEquals": {
+					"ec2:Vpc": "arn:aws:ec2:us-west-2:062217319200:vpc/vpc-0d2fb0bbe57508bd3"
+				}
+			}
+		}
+	]
+}
+```
+**Technical Commentary:** This role implements an Asynchronous Audit Trail. By restricting SQS consumption to the three named flight-control queues (CAPCOM, EECOM, FIDO) and locking database access to the logging_user profile, we ensure that anomaly logs remain tamper-resistant and cannot be corrupted by application-tier failures. The network policy is strictly bound to the project VPC via condition keys.
+
+---
+#### 5. RDSProxyExecutionRole
+This role allows the RDS Proxy service to assume its specialized duties as a connection pooling layer. It provides the proxy with the "keys" to retrieve database master credentials securely while maintaining audit logs.
+![rds proxy execution role](images/iam_evidence/rds_proxy_role.png)
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowSurgicalSecretsAccess",
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "arn:aws:secretsmanager:us-west-2:062217319200:secret:rds!db-ed1f3f7e-7f99-43b5-b26c-04fc7df386e6-g8XyHu"
+        },
+        {
+            "Sid": "AllowSurgicalKMSDecryptStrict",
+            "Effect": "Allow",
+            "Action": "kms:Decrypt",
+            "Resource": "arn:aws:kms:us-west-2:062217319200:key/8b3b799b-03ce-48d6-937f-f28e8e4860c4",
+            "Condition": {
+                "StringEquals": {
+                    "kms:ViaService": "secretsmanager.us-west-2.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "AllowDiagnosticLoggingStreams",
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:aws:logs:us-west-2:062217319200:log-group:/aws/rds_proxy:*"
+        }
+    ]
+}
+```
+**Technical Commentary:** This policy implements Service-to-Service Cryptographic Lockdown. By using the kms:ViaService condition, we ensure that the proxy can only use the encryption key when it is called through Secrets Manager. This prevents the proxy's identity from being used to decrypt the key via direct API calls, ensuring the master database password remains inside the verified "Identity Handshake" flow.
