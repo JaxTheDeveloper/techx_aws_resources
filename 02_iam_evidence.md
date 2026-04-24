@@ -319,59 +319,59 @@ This policy governs the background worker responsible for aggregating historical
 This policy provides a high-integrity logging path for system anomalies. It consumes alerts from specific SQS queues and persists them to the database's logging schema.
 ![anomaly logger execution role](images/iam_evidence/anomaly_logs_role.png)
 ```json
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "ExplicitSQSConsumption",
-        "Effect": "Allow",
-        "Action": [
-          "sqs:ReceiveMessage",
-          "sqs:DeleteMessage",
-          "sqs:GetQueueAttributes"
-        ],
-        "Resource": [
-          "arn:aws:sqs:us-west-2:123456789012:CAPCOM_Alerts",
-          "arn:aws:sqs:us-west-2:123456789012:EECOM_Alerts",
-          "arn:aws:sqs:us-west-2:123456789012:FIDO_Alerts"
-        ]
-      },
-      {
-        "Sid": "SurgicalDBLoggingLogin",
-        "Effect": "Allow",
-        "Action": "rds-db:connect",
-        "Resource": "arn:aws:rds-db:us-west-2:123456789012:dbuser:prx-ABC123456789/logging_user"
-      },
-      {
-        "Sid": "GlobalNetworkDiscovery",
-        "Effect": "Allow",
-        "Action": "ec2:DescribeNetworkInterfaces",
-        "Resource": "*"
-      },
-            {
-        "Sid": "SubnetLevelENICreation",
-        "Effect": "Allow",
-        "Action": "ec2:CreateNetworkInterface",
-        "Resource": [
-          "arn:aws:ec2:us-west-2:123456789012:network-interface/*",
-          "arn:aws:ec2:us-west-2:123456789012:subnet/subnet-AppTierA",
-          "arn:aws:ec2:us-west-2:123456789012:subnet/subnet-AppTierB",
-          "arn:aws:ec2:us-west-2:123456789012:security-group/sg-LoggerSecurityGroup"
-        ]
-      },
-      {
-        "Sid": "VPCLockedENIDeletion",
-        "Effect": "Allow",
-        "Action": "ec2:DeleteNetworkInterface",
-        "Resource": "arn:aws:ec2:us-west-2:123456789012:network-interface/*",
-        "Condition": {
-          "StringEquals": {
-            "ec2:Vpc": "arn:aws:ec2:us-west-2:123456789012:vpc/vpc-0d2fb0bbe57508bd3"
-          }
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ExplicitSQSConsumption",
+      "Effect": "Allow",
+      "Action": [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes"
+      ],
+      "Resource": [
+        "arn:aws:sqs:us-west-2:062217319200:CAPCOM_Alerts",
+        "arn:aws:sqs:us-west-2:062217319200:EECOM_Alerts",
+        "arn:aws:sqs:us-west-2:062217319200:FIDO_Alerts"
+      ]
+    },
+    {
+      "Sid": "SurgicalDBLoggingLogin",
+      "Effect": "Allow",
+      "Action": "rds-db:connect",
+      "Resource": "arn:aws:rds-db:us-west-2:062217319200:dbuser:prx-05b1fe369835614ca/logging_user"
+    },
+    {
+      "Sid": "GlobalNetworkDiscovery",
+      "Effect": "Allow",
+      "Action": "ec2:DescribeNetworkInterfaces",
+      "Resource": "*"
+    },
+    {
+      "Sid": "SubnetLevelENICreation",
+      "Effect": "Allow",
+      "Action": "ec2:CreateNetworkInterface",
+      "Resource": [
+        "arn:aws:ec2:us-west-2:062217319200:network-interface/*",
+        "arn:aws:ec2:us-west-2:062217319200:subnet/subnet-0346c434f37803738",
+        "arn:aws:ec2:us-west-2:062217319200:subnet/subnet-03c004f29633e7943",
+        "arn:aws:ec2:us-west-2:062217319200:security-group/sg-05380992383823482"
+      ]
+    },
+    {
+      "Sid": "VPCLockedENIDeletion",
+      "Effect": "Allow",
+      "Action": "ec2:DeleteNetworkInterface",
+      "Resource": "arn:aws:ec2:us-west-2:062217319200:network-interface/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Vpc": "arn:aws:ec2:us-west-2:062217319200:vpc/vpc-0d2fb0bbe57508bd3"
         }
       }
-    ]
-  }
+    }
+  ]
+}
 ```
 **Technical Commentary:** This role implements an Asynchronous Audit Trail. By restricting SQS consumption to the three named flight-control queues (CAPCOM, EECOM, FIDO) and locking database access to the logging_user profile, we ensure that anomaly logs remain tamper-resistant and cannot be corrupted by application-tier failures. The network policy is strictly bound to the project VPC via condition keys.
 
@@ -387,13 +387,13 @@ This role allows the RDS Proxy service to assume its specialized duties as a con
       "Sid": "AllowSurgicalSecretsAccess",
       "Effect": "Allow",
       "Action": "secretsmanager:GetSecretValue",
-      "Resource": "arn:aws:secretsmanager:us-west-2:123456789012:secret:rds-master-pass-XYZ"
+      "Resource": "arn:aws:secretsmanager:us-west-2:062217319200:secret:rds!db-ed1f3f7e-7f99-43b5-b26c-04fc7df386e6-g8XyHu"
     },
     {
       "Sid": "AllowSurgicalKMSDecryptStrict",
       "Effect": "Allow",
       "Action": "kms:Decrypt",
-      "Resource": "arn:aws:kms:us-west-2:123456789012:key/my-database-kms-key-uuid",
+      "Resource": "arn:aws:kms:us-west-2:062217319200:key/8b3b799b-03ce-48d6-937f-f28e8e4860c4",
       "Condition": {
         "StringEquals": {
           "kms:ViaService": "secretsmanager.us-west-2.amazonaws.com"
@@ -407,7 +407,7 @@ This role allows the RDS Proxy service to assume its specialized duties as a con
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ],
-      "Resource": "arn:aws:logs:us-west-2:123456789012:log-group:/aws/rds_proxy:*"
+      "Resource": "arn:aws:logs:us-west-2:062217319200:log-group:/aws/rds_proxy:*"
     }
   ]
 }
