@@ -10,10 +10,10 @@
 **Acceptance criterion:** HTTP API deployed to a `prod` stage, IAM authorizer attached to all routes, Invoke URL live. At least one trigger is demonstrated live: an API Gateway integration (HTTP call invokes the Lambda function).
 
 **Screenshot 1 — API Gateway core routes and integrations**
-![API Gateway Configuration and Lambda Integrations](images/api_gateway/image15.png)
+![API Gateway Configuration and Lambda Integrations](images/api_gateway/apigateway_routes.png)
 
 **Screenshot 2 — API Gateway prod stage details and IAM authorizers**
-![API Gateway Stage and Route Authorizers](images/api_gateway/image16.png)
+![API Gateway Stage and Route Authorizers](images/api_gateway/apigateway_stage_auth.png)
 
 **Configuration notes:**
 - **API Deployment:** API is successfully deployed. **Automatic Deployment** is Enabled, meaning any change to the API configuration triggers a redeploy to the `prod` stage automatically.
