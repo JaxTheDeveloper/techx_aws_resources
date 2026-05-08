@@ -59,7 +59,8 @@ We evaluated three storage options for structured data, prioritizing the transit
 ### API Hosting and Deployment
 Our hosting strategy evolved to overcome infrastructure overhead:
 
-*   **Initial Plan:** Deploy containers via **AWS Fargate** using `api_mapping.py`. Remnants of Fargate installation is evident on the lambda code.
+*   **Development Workaround:** During early development, the team temporarily hosted the API on **port 8000** via an **ngrok dev domain** to bypass Fargate setup complexity and iterate quickly.
+*   **Current Solution:** The monitoring API is containerized and deployed on **AWS Fargate**, exposed via a stable Fargate task endpoint. The Lambda function reads the endpoint from an environment variable, as shown below:
 ```py
 #/lambda/chat_handler.py
 
@@ -72,16 +73,15 @@ from geekbrain.prompts import (
 
 KNOWLEDGE_BASE_ID = os.environ.get("KB_ID", "YOUR_KB_ID")
 MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-MONITORING_API_URL = os.environ.get("MONITORING_API_URL", "http://YOUR_FARGATE_IP:8000") # remnants of Fargate installation
+MONITORING_API_URL = os.environ.get("MONITORING_API_URL", "http://YOUR_FARGATE_IP:8000") # points to the Fargate task public IP
 GUARDRAIL_ID = os.environ.get("GUARDRAIL_ID", "")
 GUARDRAIL_VERSION = os.environ.get("GUARDRAIL_VERSION", "DRAFT")
 ```
-*   **Current Solution:** To bypass Fargate setup complexity during development, the team hosted the API on **port 8000** via an **ngrok dev domain**.
-*   **Result:** This approach allowed L3–L5 modules to execute perfectly with a stable endpoint.
+*   **Result:** Deploying on Fargate provided a persistent, cloud-native endpoint, allowing L3–L5 modules to execute reliably without dependency on a local tunnel.
 ---
 
 ![Monitoring URL now becomes an env variable](../assets/monitoring_api_url.png)
-*Figure : Monitoring URL is an ip address pointing to ngrok dev domain.*
+*Figure : Monitoring URL environment variable pointing to the AWS Fargate task endpoint.*
 
 ## Section 4 — Per-Level Evidence
 
@@ -153,9 +153,34 @@ GUARDRAIL_VERSION = os.environ.get("GUARDRAIL_VERSION", "DRAFT")
 One big table DynamoDB is chosen for context storage in favor for fast retrieval with efficient data modelling stategy. Adjacency table data pattern is used to store both conversation ID and turn ID. L5 also uses this memory strategy, since L5 is what L1-L4 has been doing, wrapped in a loop with an end state. Recall the defintion of classical AI agents. 
 ![L4 Dyanodb](../assets/L4_dynamodb_data_strat.png)
 
+### L5 Evidence (Bonus B — Agent Reasoning)
+
+> L5 is a goal-directed investigation mode: the agent plans its own approach, pulls data from multiple sources in sequence, and produces a structured report with visible reasoning steps. It is the accumulation of L1–L4 wrapped in an autonomous planning loop.
+
+* **Question series (multi-step investigation on PaymentGW):**
+  1. *"What is PaymentGW's current latency and is it within SLA?"*
+  2. *"What was PaymentGW's total cost in Q1 2026 and which month was highest?"*
+  3. *"Did PaymentGW have any P1 incidents in Q1 2026? What was the root cause?"*
+
+* **Screenshots:**
+
+![L5 Output 1 — Live Latency SLA Check](../assets/l5_output_1.png)
+*Figure: Agent queries live monitoring API (2 tool calls). PaymentGW p99 = 182 ms — WITHIN the 200 ms SLA target. Structured verdict with percentile breakdown returned.*
+
+![L5 Output 2 — Q1 2026 Cost Analysis](../assets/l5_output_2.png)
+*Figure: Agent queries `monthly_costs` table via Database Query tool. Q1 total = **$16,500**. March ($7,500) identified as highest-cost month with a 56.3% spike attributed to the March 5 P1 incident.*
+
+![L5 Output 3 — P1 Incident Root Cause](../assets/l5_output_3.png)
+*Figure: Agent calls Incident History tool + synthesizes postmortem from KB. INC-005 confirmed as the sole P1 in Q1 2026 — root cause: misconfigured circuit-breaker health check causing a 3-hour outage affecting ~40% of payment volume.*
+
+* **Agent Reasoning Strategy:**
+  - The agent operates in a **planning loop**: it breaks the user's goal into sub-questions, determines which tool/source each sub-question requires, executes in order, and synthesizes a final structured report.
+  - Each turn at L5 can invoke **multiple tool calls** (live metrics + DB + KB) before responding — unlike L3 which routes to a single tool per query.
+  - Memory from the L4 DynamoDB session context is carried forward so the agent can reference findings from earlier turns (e.g., referencing the March spike identified in Turn 2 when explaining the incident in Turn 3).
+
 ---
 
 ## Section 5 — Reflection
 * Transform the project from a playground-based PoC into a production system: ditch bad practices of attaching .sqlite files directly on lambda, into Aurora Postgres. 
 * Define additional API schemes especially for Level 5: current system relies on REST, which is stateless and does not persist connections for more than 10-30 seconds. Further work will introduce an additional scheme using Websocket to handle MCP properly.
-* Finish deployment of API service to the cloud.
+* API service has been successfully deployed to **AWS Fargate**; next steps include attaching an Application Load Balancer (ALB) and enabling auto-scaling for production readiness.
