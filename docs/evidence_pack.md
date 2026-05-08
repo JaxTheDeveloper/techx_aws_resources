@@ -110,7 +110,8 @@ Level 3-4:
 ![L4 Output 3](../assets/l4_output_3.png)
 ![L4 Output 4](../assets/l4_output_4.png)
 * **Memory Strategy:**
-
+One big table DynamoDB is chosen for context storage in favor for fast retrieval with efficient data modelling stategy. Adjacency table data pattern is used to store both conversation ID and turn ID. L5 also uses this memory strategy, since L5 is what L1-L4 has been doing, wrapped in a loop with an end state. Recall the defintion of classical AI agents. 
+![L4 Dyanodb](../assets/L4_dynamodb_data_strat.png)
 ### L5 Evidence
 * **Question:** "What is the total cost of PaymentGW in January 2026?"
 * **Screenshot:**
