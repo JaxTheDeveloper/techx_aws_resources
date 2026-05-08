@@ -105,13 +105,6 @@ Level 3:
 ![L4 Output 3](../assets/l4_output_3.png)
 ![L4 Output 4](../assets/l4_output_4.png)
 * **Memory Strategy:**
-```json
-{
-    "tool": "database_query",
-    "input": {"query": "SELECT total_cost FROM monthly_costs WHERE service='PaymentGW' AND month='2026-01';"},
-    "result": {"results": [{"total_cost": 16500}], "count": 1}
-}
-```
 
 ### L5 Evidence
 * **Question:** "What is the total cost of PaymentGW in January 2026?"
