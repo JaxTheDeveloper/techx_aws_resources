@@ -156,3 +156,6 @@ One big table DynamoDB is chosen for context storage in favor for fast retrieval
 ---
 
 ## Section 5 — Reflection
+* Transform the project from a playground-based PoC into a production system: ditch bad practices of attaching .sqlite files directly on lambda, into Aurora Postgres. 
+* Define additional API schemes especially for Level 5: current system relies on REST, which is stateless and does not persist connections for more than 10-30 seconds. Further work will introduce an additional scheme using Websocket to handle MCP properly.
+* Finish deployment of API service to the cloud.
