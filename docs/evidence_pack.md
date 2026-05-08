@@ -34,7 +34,7 @@ Level 3-4:
 * **OpenSearch Vector Store:** Store vectorized chunks of Knowledge Base.
 
 ### 3. Screenshot System Running
-http://w4-geekbrain-test-ui.s3-website-us-east-1.amazonaws.com
+[GeekBrain](http://w4-geekbrain-test-ui.s3-website-us-east-1.amazonaws.com)
 ![Main UI](../assets/main_ui.png)
 ---
 
