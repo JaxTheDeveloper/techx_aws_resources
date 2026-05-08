@@ -8,7 +8,16 @@
 ## Section 1 — Cover
 
 * **Group Number:** Group 1
-* **Members:** [Member 1], [Member 2]
+* **Members:**
+Phan Thị Thủy Hiền
+Hoàng Nhật Thành
+Nguyễn Qúy Hưng
+Nguyễn Hoàng Huy
+Phạm Tùng Dương
+Nguyễn Quang Phong
+Trần Đình Minh Quân
+Phan Nguyên Đạt
+Võ Đức Vũ
 * **LLM Used:** Claude 4.5 Sonnet (via Amazon Bedrock)
 * **Framework:** Custom Agent (Raw API Orchestration via AWS Lambda)
 * **Link Repository:** https://github.com/JaxTheDeveloper/techx_aws_resources.git
@@ -53,7 +62,7 @@ We evaluated three storage options for structured data, prioritizing the transit
 3.  **Amazon Aurora (PostgreSQL):** The long-term target for production. While the environment is provisioned, data population is pending. 
     *   *Note: While SQLite served the PoC, Aurora is the designated "best practice" for performance and scalability.*
 
-![evidence of Aurora Postgres](image.png)
+![evidence of Aurora Postgres](../assets/aurora_decision_unfinished.png)
 *Figure : Provisioned Amazon Aurora PostgreSQL instance intended for production-grade data persistence.*
 
 ### API Hosting and Deployment
@@ -152,11 +161,6 @@ GUARDRAIL_VERSION = os.environ.get("GUARDRAIL_VERSION", "DRAFT")
 * **Memory Strategy:**
 One big table DynamoDB is chosen for context storage in favor for fast retrieval with efficient data modelling stategy. Adjacency table data pattern is used to store both conversation ID and turn ID. L5 also uses this memory strategy, since L5 is what L1-L4 has been doing, wrapped in a loop with an end state. Recall the defintion of classical AI agents. 
 ![L4 Dyanodb](../assets/L4_dynamodb_data_strat.png)
-### L5 Evidence
-* **Question:** "What is the total cost of PaymentGW in January 2026?"
-* **Screenshot:**
-![L5 Output](../assets/l5_output.png)
-* **Memory Strategy:**
 
 ---
 
