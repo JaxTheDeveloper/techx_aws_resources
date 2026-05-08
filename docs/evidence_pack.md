@@ -50,19 +50,23 @@ Level 3:
 ![L1 Output](../assets/l1_output.png)
 * **Retrieval Evidence:**
  ```json
-"retrievalResults": [
-    {
-        "content": {"text": "AuthSvc is the single point of authentication for GeekBrain..."},
-        "location": {"s3Location": {"uri": "s3://.../service_authsvc.md"}}
-    }
-]
+{
+  "level": "L1 - Simple RAG",
+  "answer": "Alex Chen leads Team Platform as the Engineering Lead. The team owns two critical services: PaymentGW (payment gateway processing credit cards and bank transfers) and AuthSvc (OAuth2/JWT authentication serving all other services). (source: team_platform.md)",
+  "kb_sources": [
+    "team_platform.md"
+  ],
+  "chunks_retrieved": 1,
+  "chunks_detail": [],
+  "tools_used": []
+}
 ```
 
 ### L2 Evidence
 * **Question:** "What is the API rate limit for PaymentGW?"
 * **Screenshot:**
 ![L2 Output](../assets/l2_output.png)
-* **Processing Evidence:** Agent identify that `v1` is 500 and `v2` is 1000.
+* **Processing Evidence:** "The v2 documentation supersedes v1 (which was explicitly archived in March 2025). The v2 document is marked as "CURRENT" and is the official reference as of March 2025. The v1 document even includes a note acknowledging that "v2.0 raises this limit.""
 
 ### L3 Evidence
 * **Question:** "Which service had the highest total cost in March 2026?"
@@ -111,7 +115,6 @@ Level 3:
 * **Screenshot:**
 ![L5 Output](../assets/l5_output.png)
 * **Memory Strategy:**
-```json
 
 ---
 
