@@ -59,10 +59,29 @@ We evaluated three storage options for structured data, prioritizing the transit
 ### API Hosting and Deployment
 Our hosting strategy evolved to overcome infrastructure overhead:
 
-*   **Initial Plan:** Deploy containers via **AWS Fargate** using `api_mapping.py`.
+*   **Initial Plan:** Deploy containers via **AWS Fargate** using `api_mapping.py`. Remnants of Fargate installation is evident on the lambda code.
+```py
+#/lambda/chat_handler.py
+
+from geekbrain.prompts import (
+    L1_SYSTEM_PROMPT,
+    L2_SYSTEM_PROMPT,
+    L3_SYSTEM_PROMPT,
+    L5_SYSTEM_PROMPT
+)
+
+KNOWLEDGE_BASE_ID = os.environ.get("KB_ID", "YOUR_KB_ID")
+MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MONITORING_API_URL = os.environ.get("MONITORING_API_URL", "http://YOUR_FARGATE_IP:8000") # remnants of Fargate installation
+GUARDRAIL_ID = os.environ.get("GUARDRAIL_ID", "")
+GUARDRAIL_VERSION = os.environ.get("GUARDRAIL_VERSION", "DRAFT")
+```
 *   **Current Solution:** To bypass Fargate setup complexity during development, the team hosted the API on **port 8000** via an **ngrok dev domain**.
 *   **Result:** This approach allowed L3–L5 modules to execute perfectly with a stable endpoint.
 ---
+
+![Monitoring URL now becomes an env variable](../assets/monitoring_api_url.png)
+*Figure : Monitoring URL is an ip address pointing to ngrok dev domain.*
 
 ## Section 4 — Per-Level Evidence
 
