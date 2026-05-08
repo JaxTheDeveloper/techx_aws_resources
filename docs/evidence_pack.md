@@ -8,16 +8,7 @@
 ## Section 1 — Cover
 
 * **Group Number:** Group 1
-* **Members:**
-Phan Thị Thủy Hiền
-Hoàng Nhật Thành
-Nguyễn Qúy Hưng
-Nguyễn Hoàng Huy
-Phạm Tùng Dương
-Nguyễn Quang Phong
-Trần Đình Minh Quân
-Phan Nguyên Đạt
-Võ Đức Vũ
+* **Members:** Phan Thị Thủy Hiền, Hoàng Nhật Thành, Nguyễn Qúy Hưng, Nguyễn Hoàng Huy, Phạm Tùng Dương, Nguyễn Quang Phong, Trần Đình Minh Quân, Phan Nguyên Đạt, Võ Đức Vũ
 * **LLM Used:** Claude 4.5 Sonnet (via Amazon Bedrock)
 * **Framework:** Custom Agent (Raw API Orchestration via AWS Lambda)
 * **Link Repository:** https://github.com/JaxTheDeveloper/techx_aws_resources.git
