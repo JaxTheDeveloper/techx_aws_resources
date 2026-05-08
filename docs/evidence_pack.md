@@ -20,9 +20,9 @@
 ### 1. System Architecture Diagram
 
 Level 1-2:
-![L1_L2_System_Architecture](./assets/l1_l2_diagram.png)
+![L1_L2_System_Architecture](../assets/l1_l2_diagram.png)
 Level 3:
-![L3_System_Architecture](./assets/l3_diagram.png)
+![L3_System_Architecture](../assets/l3_diagram.png)
 
 ### 2. Danh sách Component
 
@@ -34,7 +34,7 @@ Level 3:
 
 ### 3. Screenshot System Running
 
-![Main UI](./assets/main_ui.png)
+![Main UI](../assets/main_ui.png)
 ---
 
 ## Section 3 — Decision Log
@@ -47,7 +47,7 @@ Level 3:
 ### L1 Evidence
 * **Question:** "Who leads Team Platform and what services do they own?"
 * **Screenshot Output:**
-![L1 Output](./assets/l1_output.png)
+![L1 Output](../assets/l1_output.png)
 * **Retrieval Evidence:**
  ```json
 "retrievalResults": [
@@ -61,13 +61,13 @@ Level 3:
 ### L2 Evidence
 * **Question:** "What is the API rate limit for PaymentGW?"
 * **Screenshot:**
-![L2 Output](./assets/l2_output.png)
+![L2 Output](../assets/l2_output.png)
 * **Processing Evidence:** Agent identify that `v1` is 500 and `v2` is 1000.
 
 ### L3 Evidence
 * **Question:** "Which service had the highest total cost in March 2026?"
 * **Screenshot:**
-![L3 Output](./assets/l3_output.png)
+![L3 Output](../assets/l3_output.png)
 * **Tool Call Evidence:**
 ```json
 {
@@ -100,10 +100,10 @@ Level 3:
 ### L4 Evidence
 * **Question:** "What is the total cost of PaymentGW in January 2026?"
 * **Screenshot:**
-![L4 Output 1](./assets/l4_output_1.png)
-![L4 Output 2](./assets/l4_output_2.png)
-![L4 Output 3](./assets/l4_output_3.png)
-![L4 Output 4](./assets/l4_output_4.png)
+![L4 Output 1](../assets/l4_output_1.png)
+![L4 Output 2](../assets/l4_output_2.png)
+![L4 Output 3](../assets/l4_output_3.png)
+![L4 Output 4](../assets/l4_output_4.png)
 * **Memory Strategy:**
 ```json
 {
@@ -116,7 +116,7 @@ Level 3:
 ### L5 Evidence
 * **Question:** "What is the total cost of PaymentGW in January 2026?"
 * **Screenshot:**
-![L5 Output](./assets/l5_output.png)
+![L5 Output](../assets/l5_output.png)
 * **Memory Strategy:**
 ```json
 
