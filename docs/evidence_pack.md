@@ -39,8 +39,29 @@ Level 3-4:
 ---
 
 ## Section 3 — Decision Log
+### KB retrieval strat
+The chunking strategy for our Knowledge Base (KB) directly influenced our choice of retrieval method, balancing autonomy with ease of deployment. Since our primary goal was a native AWS integration (rejecting on-prem FAISS), we optimized for **semantic chunking**:
 
+*   **L1 (Simple RAG):** Utilizes `RetrieveAndGenerate()`. This was necessary because a standard `Retrieve()` only fetched the first child chunk, which impeded overall context quality.
+*   **L2–L5 (Advanced RAG):** Employs the `Retrieve()` API with a higher density of **10 chunks** to provide richer context for complex queries.
 
+### Structured data querying for L3-L5
+We evaluated three storage options for structured data, prioritizing the transition from PoC to production:
+
+1.  **SQLite (Current PoC):** Implemented as a Lambda Layer for rapid development and low latency.
+2.  **S3 + Amazon Athena:** Offers low storage costs but was rejected for L5 iterations due to a **1–5s cold start** latency.
+3.  **Amazon Aurora (PostgreSQL):** The long-term target for production. While the environment is provisioned, data population is pending. 
+    *   *Note: While SQLite served the PoC, Aurora is the designated "best practice" for performance and scalability.*
+
+![evidence of Aurora Postgres](image.png)
+*Figure : Provisioned Amazon Aurora PostgreSQL instance intended for production-grade data persistence.*
+
+### API Hosting and Deployment
+Our hosting strategy evolved to overcome infrastructure overhead:
+
+*   **Initial Plan:** Deploy containers via **AWS Fargate** using `api_mapping.py`.
+*   **Current Solution:** To bypass Fargate setup complexity during development, the team hosted the API on **port 8000** via an **ngrok dev domain**.
+*   **Result:** This approach allowed L3–L5 modules to execute perfectly with a stable endpoint.
 ---
 
 ## Section 4 — Per-Level Evidence
