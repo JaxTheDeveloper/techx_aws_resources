@@ -21,16 +21,17 @@
 
 Level 1-2:
 ![L1_L2_System_Architecture](../assets/l1_l2_diagram.png)
-Level 3:
-![L3_System_Architecture](../assets/l3_diagram.png)
+Level 3-4:
+![L3_L4_System_Architecture](../assets/l3_l4_diagram.png)
 
-### 2. Danh sách Component
+### 2. Component List
 
 * **API Gateway:** Receive request REST from Frontend.
 * **Custom Agent Lambda:** Orchestrator perform loop to call Knowledge Base, process Tool Use and manage conversation with LLM.
 * **Knowledge Base (KB):** Store 36 Markdown files of GeekBrain, provide semantic search capability.
-* **DynamoDB(SQLite):** Store history data of Cost, Incidents and SLA.
+* **DynamoDB(SQLite):** Store conversation history.
 * **Claude 4.5 Sonnet:** Main LLM perform reasoning, extract data and summarize the answer.
+* **OpenSearch Vector Store:** Store vectorized chunks of Knowledge Base.
 
 ### 3. Screenshot System Running
 
