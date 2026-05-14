@@ -22,6 +22,19 @@ resource "aws_network_acl" "ingress" {
 
 # ---- Inbound rules ----
 
+# W5 MH2 — Explicit DENY rule (rule #50 fires before any ALLOW)
+# Blocks a reserved test CIDR; used for negative security test in Evidence Pack.
+resource "aws_network_acl_rule" "ingress_inbound_deny_test_cidr" {
+  network_acl_id = aws_network_acl.ingress.id
+  rule_number    = 50
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "deny"
+  cidr_block     = "192.168.99.0/24"
+  from_port      = 0
+  to_port        = 65535
+}
+
 resource "aws_network_acl_rule" "ingress_inbound_https" {
   network_acl_id = aws_network_acl.ingress.id
   rule_number    = 100
@@ -93,6 +106,18 @@ resource "aws_network_acl" "app" {
 }
 
 # ---- Inbound rules ----
+
+# W5 MH2 — Explicit DENY rule
+resource "aws_network_acl_rule" "app_inbound_deny_test_cidr" {
+  network_acl_id = aws_network_acl.app.id
+  rule_number    = 50
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "deny"
+  cidr_block     = "192.168.99.0/24"
+  from_port      = 0
+  to_port        = 65535
+}
 
 # HTTPS from Ingress VPC (API Gateway VPC Link traffic arriving at Lambda)
 resource "aws_network_acl_rule" "app_inbound_https_from_ingress" {
@@ -205,6 +230,18 @@ resource "aws_network_acl" "db" {
 }
 
 # ---- Inbound rules ----
+
+# W5 MH2 — Explicit DENY rule
+resource "aws_network_acl_rule" "db_inbound_deny_test_cidr" {
+  network_acl_id = aws_network_acl.db.id
+  rule_number    = 50
+  egress         = false
+  protocol       = "tcp"
+  rule_action    = "deny"
+  cidr_block     = "192.168.99.0/24"
+  from_port      = 0
+  to_port        = 65535
+}
 
 # PostgreSQL connections from Lambda (Application VPC)
 resource "aws_network_acl_rule" "db_inbound_postgres_from_app" {
