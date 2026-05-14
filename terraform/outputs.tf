@@ -1,9 +1,6 @@
 ###############################################################################
-# outputs.tf
+# VPC1 
 ###############################################################################
-
-# ── VPC-1 ────────────────────────────────────────────────────────────────────
-
 output "vpc1_id" {
   description = "VPC-1 ID (Application VPC)"
   value       = aws_vpc.vpc1.id
@@ -54,8 +51,9 @@ output "vpc1_nat_gateway_az2_id" {
   value       = aws_nat_gateway.vpc1_az2.id
 }
 
-# ── VPC-2 ────────────────────────────────────────────────────────────────────
-
+###############################################################################
+# VPC2 
+###############################################################################
 output "vpc2_id" {
   description = "VPC-2 ID (Database VPC)"
   value       = aws_vpc.vpc2.id
@@ -76,14 +74,11 @@ output "vpc2_az2_isolated_subnet_id" {
   value       = aws_subnet.vpc2_az2_isolated.id
 }
 
-# ── Transit Gateway ──────────────────────────────────────────────────────────
+###############################################################################
+# VPC Peering
+###############################################################################
 
-output "transit_gateway_id" {
-  description = "Transit Gateway ID"
-  value       = aws_ec2_transit_gateway.tgw.id
-}
-
-output "tgw_route_table_id" {
-  description = "Transit Gateway Route Table ID"
-  value       = aws_ec2_transit_gateway_route_table.main.id
+output "vpc_peering_connection_id" {
+  description = "VPC Peering Connection ID between VPC-1 and VPC-2"
+  value       = aws_vpc_peering_connection.vpc1_to_vpc2.id
 }

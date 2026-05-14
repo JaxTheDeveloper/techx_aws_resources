@@ -1,10 +1,5 @@
 ###############################################################################
-# nacl.tf — W5 MH2: Network ACLs
-# VPC1 private app subnets + VPC2 isolated subnets
-###############################################################################
-
-###############################################################################
-# VPC1 — Private Application Subnets NACL
+# VPC1 - Private Application Subnets NACL
 ###############################################################################
 
 resource "aws_network_acl" "vpc1_private_app" {
@@ -14,7 +9,7 @@ resource "aws_network_acl" "vpc1_private_app" {
     aws_subnet.vpc1_az2_private_app.id,
   ]
 
-  # ── DENY rules (evaluated first — low rule numbers) ──────────────────────
+  # DENY rules (evaluated first — low rule numbers)
 
   # Rule 50: DENY from blocked test CIDR (for negative test evidence pack)
   ingress {
@@ -46,7 +41,7 @@ resource "aws_network_acl" "vpc1_private_app" {
     to_port    = 3389
   }
 
-  # ── ALLOW rules ──────────────────────────────────────────────────────────
+  # ALLOW rules
 
   # Rule 100: Allow HTTPS from within VPC1
   ingress {
@@ -95,7 +90,7 @@ resource "aws_network_acl" "vpc1_private_app" {
 }
 
 ###############################################################################
-# VPC2 — Isolated Database Subnets NACL
+# VPC2 - Isolated Database Subnets NACL
 ###############################################################################
 
 resource "aws_network_acl" "vpc2_isolated" {
@@ -105,14 +100,14 @@ resource "aws_network_acl" "vpc2_isolated" {
     aws_subnet.vpc2_az2_isolated.id,
   ]
 
-  # Rule 50: DENY all internet traffic (database layer must never be public)
+  # Rule 100: Allow inbound from VPC1 app subnets only (via VPC Peering)
   ingress {
-    rule_no    = 50
-    action     = "deny"
-    protocol   = "-1"
-    cidr_block = "0.0.0.0/0"
+    rule_no    = 100
+    action     = "allow"
+    protocol   = "tcp"
+    cidr_block = var.vpc1_cidr
     from_port  = 0
-    to_port    = 0
+    to_port    = 65535
   }
 
   # Rule 100: Allow inbound from VPC1 app subnets only (via Transit Gateway)
@@ -125,6 +120,7 @@ resource "aws_network_acl" "vpc2_isolated" {
     to_port    = 65535
   }
 
+  # Implicit DENY all - no explicit rule needed; NACL denies everything not matched above
   # Outbound: allow responses back to VPC1 only
   egress {
     rule_no    = 100

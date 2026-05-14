@@ -1,7 +1,3 @@
-###############################################################################
-# variables.tf
-###############################################################################
-
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
@@ -20,10 +16,7 @@ variable "environment" {
   default     = "prod"
 }
 
-###############################################################################
 # VPC-1 CIDRs
-###############################################################################
-
 variable "vpc1_cidr" {
   description = "CIDR block for VPC-1 (application VPC)"
   type        = string
@@ -68,10 +61,7 @@ variable "vpc1_az2_firewall_cidr" {
   default     = "10.1.131.0/24"
 }
 
-###############################################################################
 # VPC-2 CIDRs
-###############################################################################
-
 variable "vpc2_cidr" {
   description = "CIDR block for VPC-2 (database/data VPC)"
   type        = string

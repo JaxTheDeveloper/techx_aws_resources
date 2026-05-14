@@ -1,8 +1,5 @@
-###############################################################################
-# firewall.tf — W5 MH2 Path A: AWS Network Firewall
 # Required because NAT Gateway exists in stack
 # Traffic path: Lambda → Firewall Endpoint → NAT → Internet
-###############################################################################
 
 ###############################################################################
 # CLOUDWATCH LOG GROUPS
