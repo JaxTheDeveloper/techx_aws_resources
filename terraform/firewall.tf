@@ -1,0 +1,160 @@
+###############################################################################
+# firewall.tf — W5 MH2 Path A: AWS Network Firewall
+# Required because NAT Gateway exists in stack
+# Traffic path: Lambda → Firewall Endpoint → NAT → Internet
+###############################################################################
+
+###############################################################################
+# CLOUDWATCH LOG GROUPS
+###############################################################################
+
+resource "aws_cloudwatch_log_group" "firewall_alert" {
+  name              = "/aws/network-firewall/${var.project_name}/alert"
+  retention_in_days = 7
+  tags = {
+    Name        = "${var.project_name}-firewall-alert-logs"
+    Environment = var.environment
+  }
+}
+
+resource "aws_cloudwatch_log_group" "firewall_flow" {
+  name              = "/aws/network-firewall/${var.project_name}/flow"
+  retention_in_days = 7
+  tags = {
+    Name        = "${var.project_name}-firewall-flow-logs"
+    Environment = var.environment
+  }
+}
+
+###############################################################################
+# STATEFUL RULE GROUP — domain-based egress allowlist
+###############################################################################
+
+resource "aws_networkfirewall_rule_group" "egress_allowlist" {
+  name     = "${var.project_name}-egress-allowlist"
+  type     = "STATEFUL"
+  capacity = 100
+
+  rule_group {
+    rules_source {
+      rules_string = <<-RULES
+        pass tls $HOME_NET any -> $EXTERNAL_NET 443 (tls.sni; content:"amazonaws.com"; endswith; msg:"Allow AWS APIs"; sid:1000001; rev:1;)
+        pass tls $HOME_NET any -> $EXTERNAL_NET 443 (tls.sni; content:"amazon.com"; endswith; msg:"Allow Amazon"; sid:1000002; rev:1;)
+        pass http $HOME_NET any -> $EXTERNAL_NET 80 (http.host; content:"amazonaws.com"; endswith; msg:"Allow AWS HTTP"; sid:1000003; rev:1;)
+        drop tls $HOME_NET any -> $EXTERNAL_NET 443 (msg:"Block all other TLS"; sid:1000099; rev:1;)
+        drop http $HOME_NET any -> $EXTERNAL_NET 80 (msg:"Block all other HTTP"; sid:1000098; rev:1;)
+      RULES
+    }
+  }
+
+  tags = {
+    Name        = "${var.project_name}-egress-allowlist"
+    Environment = var.environment
+  }
+}
+
+###############################################################################
+# FIREWALL POLICY
+###############################################################################
+
+resource "aws_networkfirewall_firewall_policy" "main" {
+  name = "${var.project_name}-firewall-policy"
+
+  firewall_policy {
+    stateless_default_actions          = ["aws:forward_to_sfe"]
+    stateless_fragment_default_actions = ["aws:forward_to_sfe"]
+
+    stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.egress_allowlist.arn
+    }
+  }
+
+  tags = {
+    Name        = "${var.project_name}-firewall-policy"
+    Environment = var.environment
+  }
+}
+
+###############################################################################
+# NETWORK FIREWALL — deployed in both AZs
+###############################################################################
+
+resource "aws_networkfirewall_firewall" "main" {
+  name                = "${var.project_name}-network-firewall"
+  firewall_policy_arn = aws_networkfirewall_firewall_policy.main.arn
+  vpc_id              = aws_vpc.vpc1.id
+
+  subnet_mapping {
+    subnet_id = aws_subnet.vpc1_az1_firewall.id
+  }
+
+  subnet_mapping {
+    subnet_id = aws_subnet.vpc1_az2_firewall.id
+  }
+
+  tags = {
+    Name        = "${var.project_name}-network-firewall"
+    Environment = var.environment
+  }
+}
+
+###############################################################################
+# FIREWALL LOGGING
+###############################################################################
+
+resource "aws_networkfirewall_logging_configuration" "main" {
+  firewall_arn = aws_networkfirewall_firewall.main.arn
+
+  logging_configuration {
+    log_destination_config {
+      log_destination = {
+        logGroup = aws_cloudwatch_log_group.firewall_alert.name
+      }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "ALERT"
+    }
+
+    log_destination_config {
+      log_destination = {
+        logGroup = aws_cloudwatch_log_group.firewall_flow.name
+      }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "FLOW"
+    }
+  }
+}
+
+###############################################################################
+# ROUTE INJECTION — add 0.0.0.0/0 → firewall endpoint into private app tables
+# Firewall endpoint IDs only known after firewall is created
+###############################################################################
+
+locals {
+  fw_endpoint_az1 = tolist([
+    for s in aws_networkfirewall_firewall.main.firewall_status[0].sync_states :
+    s.attachment[0].endpoint_id
+    if s.availability_zone == local.az_1
+  ])[0]
+
+  fw_endpoint_az2 = tolist([
+    for s in aws_networkfirewall_firewall.main.firewall_status[0].sync_states :
+    s.attachment[0].endpoint_id
+    if s.availability_zone == local.az_2
+  ])[0]
+}
+
+# Private app AZ-1: 0.0.0.0/0 → firewall endpoint
+resource "aws_route" "private_app_az1_to_firewall" {
+  route_table_id         = aws_route_table.vpc1_private_app_az1.id
+  destination_cidr_block = "0.0.0.0/0"
+  vpc_endpoint_id        = local.fw_endpoint_az1
+  depends_on             = [aws_networkfirewall_firewall.main]
+}
+
+# Private app AZ-2: 0.0.0.0/0 → firewall endpoint
+resource "aws_route" "private_app_az2_to_firewall" {
+  route_table_id         = aws_route_table.vpc1_private_app_az2.id
+  destination_cidr_block = "0.0.0.0/0"
+  vpc_endpoint_id        = local.fw_endpoint_az2
+  depends_on             = [aws_networkfirewall_firewall.main]
+}
