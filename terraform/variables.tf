@@ -5,13 +5,13 @@
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
-  default     = "ap-southeast-1"
+  default     = "us-west-2"
 }
 
 variable "project_name" {
   description = "Project name used as a prefix for all resources"
   type        = string
-  default     = "myproject"
+  default     = "Xbrain-week-5"
 }
 
 variable "environment" {
