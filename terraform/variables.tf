@@ -40,7 +40,7 @@ variable "vpc1_az1_public_cidr" {
 variable "vpc1_az1_private_app_cidr" {
   description = "VPC-1 AZ-1 Private Application Subnet CIDR"
   type        = string
-  default     = "10.1.8.0/18"
+  default     = "10.1.0.0/18"
 }
 
 variable "vpc1_az1_firewall_cidr" {
@@ -59,7 +59,7 @@ variable "vpc1_az2_public_cidr" {
 variable "vpc1_az2_private_app_cidr" {
   description = "VPC-1 AZ-2 Private Application Subnet CIDR"
   type        = string
-  default     = "10.1.44.0/18"
+  default     = "10.1.64.0/18"
 }
 
 variable "vpc1_az2_firewall_cidr" {
