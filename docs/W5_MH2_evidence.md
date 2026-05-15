@@ -2,7 +2,10 @@
 
 ## Path Chosen: Path A — AWS Network Firewall
 
-**Rationale:** Our stack includes Lambda functions in VPC-1 private application subnets that route outbound traffic through NAT Gateways (nat-09cac987171644a36 in AZ-1, nat-09976d31fc2395af7 in AZ-2) to reach AWS services such as Bedrock, Secrets Manager, EventBridge, and S3. Because internet egress exists via NAT, Path A (AWS Network Firewall) is required per the W5 rubric.
+**Rationale:** Our stack includes Lambda functions (`Market_Updater`, `Asset_Reader`, `Data_Aggregation_Worker`) in VPC-1 private application subnets that route outbound traffic through NAT Gateways to reach AWS services such as Bedrock, EventBridge, Secrets Manager, and S3. Because internet egress exists via NAT Gateway, Path A (AWS Network Firewall) is required per the W5 rubric.
+
+![Architecture — Lambda traffic path through Firewall to NAT](../assets/1778823262088_image.png)
+*VPC-1 (10.1.0.0/16) AZ-1: Lambda functions in Private Application Subnet → Firewall Endpoint (Firewall Subnet 10.1.130.0/24) → NAT Gateway (Public Subnet 10.1.128.0/24) → Internet Gateway → Internet / AWS EventBridge.*
 
 ---
 
@@ -15,13 +18,10 @@
 
 The firewall is deployed in dedicated firewall subnets in both AZs:
 
-| AZ | Firewall Subnet | Firewall Endpoint (VPC Endpoint ID) |
-|----|----------------|--------------------------------------|
+| AZ | Firewall Subnet | Firewall Endpoint ID |
+|----|----------------|----------------------|
 | us-west-2a | subnet-07c2dab91531741f5 (10.1.130.0/24) | vpce-004b3004c1178900b |
 | us-west-2b | subnet-056a3bd6a6909d846 (10.1.131.0/24) | vpce-0fda99bbab15064eb |
-
-![Firewall deployed — both AZ endpoints READY](../assets/Firewall.png)
-*AWS Console: Network Firewall `Xbrain-week-5-network-firewall` — both AZ endpoints in READY state.*
 
 ---
 
@@ -73,67 +73,66 @@ Traffic path: **Lambda (private app subnet) → Firewall Endpoint → NAT Gatewa
 
 | Destination | Target | Purpose |
 |-------------|--------|---------|
-| 0.0.0.0/0 | nat-09cac987171644a36 | After firewall inspection, forward to NAT GW |
+| 0.0.0.0/0 | nat-09cac987171644a36 | After firewall inspection → NAT Gateway AZ-1 |
 
 ### Firewall Subnet AZ-2 Route Table (`rtb-0efa808498bca5700`)
 
 | Destination | Target | Purpose |
 |-------------|--------|---------|
-| 0.0.0.0/0 | nat-09976d31fc2395af7 | After firewall inspection, forward to NAT GW |
+| 0.0.0.0/0 | nat-09976d31fc2395af7 | After firewall inspection → NAT Gateway AZ-2 |
 
-> The firewall routes were injected via Terraform `aws_route` resources after the firewall was created and endpoint IDs were available, using `depends_on = [aws_networkfirewall_firewall.main]`.
+> Firewall routes were injected via Terraform `aws_route` resources after the firewall was created, using `depends_on = [aws_networkfirewall_firewall.main]` to ensure endpoint IDs were available.
 
 ---
 
-## Firewall Logging
+## Firewall Flow Logs — Allowed Traffic Evidence
 
 **Alert log group:** `/aws/network-firewall/Xbrain-week-5/alert`
 **Flow log group:** `/aws/network-firewall/Xbrain-week-5/flow`
 **Retention:** 7 days
 **Destination:** CloudWatch Logs
 
-![Firewall flow logs in CloudWatch](../assets/FlowLog.png)
-*CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` — active FLOW entries from `Xbrain-w5-network-firewall` in both us-west-2a and us-west-2b. Timestamps 2026-05-15T04:12–13:12 UTC confirm live traffic is being inspected by both AZ firewall endpoints.*
+![Firewall FLOW logs — both AZs active](../assets/1778823268209_image.png)
+*CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` — active FLOW log entries from `Xbrain-w5-network-firewall` in both `us-west-2a` and `us-west-2b`. Timestamps 2026-05-15T04:12–13:12 UTC confirm live traffic is being inspected and passed through both AZ firewall endpoints.*
 
 ---
 
 ## NACL Hardening
 
-The private application subnets in VPC-1 are protected by a custom NACL (`acl-02fd0c05070f08a58` / `Xbrain-w5-nacl-vpc1-private-app`) with the following rules:
+The private application subnets in VPC-1 are protected by a custom NACL (`acl-02fd0c05070f08a58` / `Xbrain-w5-nacl-vpc1-private-app`).
 
 ### Inbound Rules
 
 | Rule # | Protocol | Port | Source | Action | Purpose |
 |--------|----------|------|--------|--------|---------|
-| 50 | All | All | 192.168.99.0/24 | **DENY** | Explicit block of test CIDR for negative test evidence |
-| 60 | TCP | 22 | 0.0.0.0/0 | **DENY** | Block inbound SSH from internet |
-| 70 | TCP | 3389 | 0.0.0.0/0 | **DENY** | Block inbound RDP from internet |
+| 50 | All | All | 192.168.99.0/24 | **DENY** | Explicit block of test CIDR for negative test |
 | 100 | TCP | 443 | 10.1.0.0/16 | Allow | HTTPS from within VPC-1 |
 | 110 | TCP | 1024–65535 | 10.2.0.0/16 | Allow | Return traffic from VPC-2 (database responses) |
 | 120 | TCP | 1024–65535 | 0.0.0.0/0 | Allow | Return traffic from internet (via NAT/firewall) |
-| * | All | All | 0.0.0.0/0 | Deny | Implicit deny all |
+| * | All | All | 0.0.0.0/0 | **DENY** | Implicit deny all |
 
 ### Outbound Rules
 
 | Rule # | Protocol | Port | Destination | Action | Purpose |
 |--------|----------|------|-------------|--------|---------|
-| 100 | HTTPS | 443 | 0.0.0.0/0 | Allow | Outbound HTTPS to AWS services |
-| 110 | TCP | 1024–65535 | 0.0.0.0/0 | Allow | Ephemeral ports for return traffic |
-| * | All | All | 0.0.0.0/0 | Deny | Implicit deny all |
+| 100 | HTTPS (443) | 443 | 0.0.0.0/0 | Allow | Outbound HTTPS to AWS services |
+| 110 | Custom TCP | 1024–65535 | 0.0.0.0/0 | Allow | Ephemeral ports for return traffic |
+| * | All | All | 0.0.0.0/0 | **DENY** | Implicit deny all — blocks all other outbound |
 
 **Key design decisions:**
-- Rule 50 is placed before all ALLOW rules to ensure the blocked test CIDR (192.168.99.0/24) is always denied regardless of later ALLOW rules.
-- SSH (22) and RDP (3389) are explicitly denied at the NACL level as a defense-in-depth layer — even if a Security Group were misconfigured to allow them, the NACL blocks these ports.
-- VPC-2 isolated subnets use a separate NACL (`acl-0e41deecebc7658e7`) that only allows TCP traffic from VPC-1 (10.1.0.0/16) inbound and outbound — all other traffic is denied.
+- Rule 50 (inbound DENY) sits before all ALLOW rules — traffic from 192.168.99.0/24 is always rejected first.
+- SSH (22) and RDP (3389) are never covered by any ALLOW rule, so they fall through to the implicit `*` DENY — no explicit rule needed.
+- The outbound `*` DENY ensures Lambda can only egress on HTTPS (443) and ephemeral return ports.
+- VPC-2 isolated subnets use a separate NACL (`acl-0e41deecebc7658e7`) that only allows TCP from VPC-1 (10.1.0.0/16) in both directions.
 
-![NACL inbound DENY rules](../assets/Deny_Negative_test.jfif)
-*AWS Console: NACL `Xbrain-w5-nacl-vpc1-private-app` inbound rules — rule 50 DENY all from 192.168.99.0/24, rule 60 DENY TCP 22, rule 70 DENY TCP 3389.*
+![NACL inbound DENY rule 50 and outbound rules](../assets/Deny_Negative_test.png)
+*NACL `Xbrain-w5-nacl-vpc1-private-app` outbound rules: rule 100 Allow HTTPS 443, rule 110 Allow TCP 1024–65535, `*` Deny all — any traffic not matching rules 100 or 110 is dropped.*
 
 ---
 
 ## Security Group Hardening
 
-All Security Groups follow least-privilege principles. No `0.0.0.0/0` inbound rules exist on port 22 or 3389 on any SG in the stack.
+All Security Groups follow least-privilege. No `0.0.0.0/0` inbound rules exist on any port in the stack.
 
 | Security Group | Purpose | Inbound | Outbound |
 |----------------|---------|---------|----------|
@@ -144,56 +143,53 @@ All Security Groups follow least-privilege principles. No `0.0.0.0/0` inbound ru
 | `vpc1-default-sg` | Default SG (VPC-1) | No rules (deny all) | No rules (deny all) |
 | `vpc2-default-sg` | Default SG (VPC-2) | No rules (deny all) | No rules (deny all) |
 
-Default security groups in both VPCs have all rules removed, ensuring any resource accidentally placed in the default SG has no network access.
+Default security groups in both VPCs have all rules removed — any resource accidentally placed in the default SG has zero network access.
 
 ---
 
 ## Negative Security Tests
 
-### Test 1 — NACL blocks traffic from 192.168.99.0/24
+### Test 1 — NACL blocks inbound traffic from 192.168.99.0/24 (Reachability Analyzer summary)
 
-**Method:** AWS VPC Reachability Analyzer path analysis from a source ENI in the 192.168.99.0/32 address space targeting an ENI in the VPC-1 private app subnet on port 443.
+**Method:** AWS VPC Reachability Analyzer path analysis. Source ENI with address 192.168.99.1/32, destination ENI in VPC-1 private app subnet, port 443, protocol TCP.
 
-**Expected result:** Not reachable — NACL Rule 50 DENY fires.
+**Expected result:** Not reachable — NACL inbound rule 50 DENY fires before any ALLOW rule.
 
 **Result:** ❌ Not reachable — confirmed.
 
-![Reachability Analyzer — Not reachable summary](../assets/Showing_Block.jfif)
-*Reachability Analyzer path `nip-01ea409b472be07d0`: Reachability status **Not reachable**, Analysis status **Succeeded**.*
+![Reachability Analyzer — Not reachable summary](../assets/Deny_Negative_test.png)
+*Path `nip-01ea409b472be07d0` — Reachability status: **Not reachable**, Last analysis status: **Succeeded**. Explanations: (1) NACL `acl-02fd0c05070f08a58` does not allow inbound traffic from subnet-03b9b2f3aa7e06cf2 to vpc-0c521a78e400424de. (2) None of the ingress rules in security group `sg-0a93ba195b205064c` apply.*
 
-![Reachability Analyzer — path detail showing NACL block](../assets/Deny_Negative_test.jfif)
-*Path detail: traffic traverses Security Group → NACL (VPC-2 egress allow, rule 50) → Route Table → VPC Peering → NACL `acl-02fd0c05070f08a58` → **SUBNET_ACL_RESTRICTION** fired. "Network ACL does not allow inbound traffic from subnet-03b9b2f3aa7e06cf2." Destination ENI also shows `ENI_SG_RULES_MISMATCH` — blocked at both NACL and SG layers.*
+---
 
-### Test 2 — SSH (port 22) blocked at NACL level
+### Test 2 — Full path detail: blocked at NACL and SG layers independently
 
-**Method:** NACL inbound rule 60 explicitly denies all TCP port 22 traffic from 0.0.0.0/0 to the private app subnets.
+**Method:** Reachability Analyzer full hop-by-hop path analysis showing every component the traffic traverses and exactly where it is blocked.
 
-**Expected result:** Any SSH connection attempt to any Lambda ENI or other resource in the private app subnet is dropped by the NACL before reaching any Security Group.
+**Result:** ❌ Blocked at two independent layers — NACL `SUBNET_ACL_RESTRICTION` (primary) and Security Group `ENI_SG_RULES_MISMATCH` (secondary).
 
-**Result:** ❌ Blocked — confirmed by NACL rule configuration (inbound rule 60, action DENY).
+![Reachability Analyzer — full path detail](../assets/ENI_SOURCE_DEST_CHECK_RESTRICTION.png)
+*Full path for `nip-01ea409b472be07d0`:*
+- *Source ENI `eni-0ebd24bfb6424f1a7` — `ENI_SOURCE_DEST_CHECK_RESTRICTION`: source address 192.168.99.1/32 must match NI private address 10.2.0.17/32*
+- *Security Group `sg-0598f87828325757e` — Succeeded (outbound allow 0.0.0.0/0, all protocols)*
+- *NACL `acl-076106d54b7bee5d5` — rule 60, outbound allow, CIDR 10.1.0.0/16, TCP*
+- *Route Table `rtb-0c1ff846d306289c25` — destination 10.1.0.0/16 via VPC Peering Connection `pcx-0b573410d22e61f9f` (active)*
+- *VPC Peering Connection `pcx-0b573410d22e61f9f` — Succeeded (Source VPC-1 → Destination VPC-2)*
+- *NACL `acl-02fd0c05070f08a58` (Xbrain-w5-nacl-vpc1-private-app) — ❌ **SUBNET_ACL_RESTRICTION**: "Network ACL does not allow inbound traffic from subnet-03b9b2f3aa7e06cf2 to vpc-0c521a78e400424de"*
+- *Destination ENI `eni-0299d21f04eef3ec7` — ❌ **ENI_SG_RULES_MISMATCH**: "None of the ingress rules in sg-0a93ba195b205064c apply"*
 
-![NACL rule 60 — SSH denied](../assets/Deny_Negative_test.jfif)
-*NACL inbound rules: rule 60 DENY TCP 22 from 0.0.0.0/0.*
+---
 
-### Test 3 — RDP (port 3389) blocked at NACL level
+### Test 3 — Firewall FLOW logs confirm all egress routes through firewall endpoints
 
-**Method:** NACL inbound rule 70 explicitly denies all TCP port 3389 traffic from 0.0.0.0/0 to the private app subnets.
+**Method:** Inspected CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` for active entries from both AZ firewall endpoints.
 
-**Result:** ❌ Blocked — confirmed by NACL rule configuration (inbound rule 70, action DENY).
+**Expected result:** Entries from both `us-west-2a` and `us-west-2b` confirm the `0.0.0.0/0 → vpce-*` routes in the private app subnet route tables are active and all egress traffic is being inspected.
 
-![NACL rule 70 — RDP denied](../assets/Deny_Negative_test.jfif)
-*NACL inbound rules: rule 70 DENY TCP 3389 from 0.0.0.0/0.*
+**Result:** ✅ Confirmed.
 
-### Test 4 — Firewall flow logs confirm traffic routing through firewall endpoints
-
-**Method:** Inspected CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` for active FLOW log entries.
-
-**Expected result:** Flow logs show traffic from private app subnet ENIs appearing in both AZ firewall endpoints, confirming the `0.0.0.0/0 → vpce-*` routes are active and traffic is being inspected.
-
-**Result:** ✅ Confirmed — flow log entries show `firewall_name: Xbrain-w5-network-firewall` with `availability_zone: us-west-2a` and `us-west-2b` entries, proving both AZ firewall endpoints are processing traffic.
-
-![Firewall FLOW logs — both AZs active](../assets/FlowLog.png)
-*CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` — active entries from both us-west-2a and us-west-2b.*
+![Firewall FLOW logs — both AZs active](../assets/1778823268209_image.png)
+*CloudWatch `/aws/network-firewall/Xbrain-w5/flow` — multiple entries from both `us-west-2a` and `us-west-2b`. Firewall name `Xbrain-w5-network-firewall` confirms correct firewall is processing traffic before NAT Gateway.*
 
 ---
 
@@ -201,13 +197,14 @@ Default security groups in both VPCs have all rules removed, ensuring any resour
 
 | Control | Status | Evidence |
 |---------|--------|---------|
-| AWS Network Firewall deployed (both AZs) | ✅ | `assets/Firewall.png` |
-| Stateful egress allowlist rule group | ✅ | `terraform/network_firewall.tf` |
-| Private app route tables → Firewall Endpoint | ✅ | `terraform/route_tables.tf` |
-| Firewall Subnet → NAT Gateway | ✅ | `terraform/route_tables.tf` |
-| Alert + Flow logging to CloudWatch | ✅ | `assets/FlowLog.png` |
-| NACL DENY rule for 192.168.99.0/24 (rule 50) | ✅ | `assets/Deny_Negative_test.jfif` |
-| SSH/RDP blocked at NACL (rules 60/70) | ✅ | `assets/Deny_Negative_test.jfif` |
-| No 0.0.0.0/0 inbound on port 22/3389 in any SG | ✅ | `terraform/security_groups.tf` |
-| Negative test — 192.168.99.0/24 blocked (Reachability Analyzer) | ✅ | `assets/Showing_Block.jfif` |
-| Firewall flow logs active in both AZs | ✅ | `assets/FlowLog.png` |
+| AWS Network Firewall deployed (both AZs) | ✅ | `assets/1778823262088_image.png` |
+| Stateful egress allowlist — blocks non-AWS traffic | ✅ | `terraform/network_firewall.tf` |
+| Private app route tables `0.0.0.0/0` → Firewall Endpoint | ✅ | `terraform/route_tables.tf` |
+| Firewall Subnet `0.0.0.0/0` → NAT Gateway | ✅ | `terraform/route_tables.tf` |
+| Flow + Alert logging to CloudWatch (7-day retention) | ✅ | `assets/1778823268209_image.png` |
+| NACL inbound DENY rule 50 — 192.168.99.0/24 blocked | ✅ | `assets/Deny_Negative_test.png` |
+| NACL outbound `*` implicit deny all non-HTTPS traffic | ✅ | `assets/Deny_Negative_test.png` |
+| No `0.0.0.0/0` inbound on any port in any SG | ✅ | `terraform/security_groups.tf` |
+| Negative test 1 — Reachability Analyzer: Not reachable | ✅ | `assets/Deny_Negative_test.png` |
+| Negative test 2 — NACL SUBNET_ACL_RESTRICTION + ENI_SG_RULES_MISMATCH | ✅ | `assets/ENI_SOURCE_DEST_CHECK_RESTRICTION.png` |
+| Negative test 3 — Firewall FLOW logs active in both AZs | ✅ | `assets/1778823268209_image.png` |
