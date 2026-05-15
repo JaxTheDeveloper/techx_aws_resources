@@ -37,9 +37,9 @@ Implement granular security controls within the Database VPC to enforce the Prin
 
 ## MH4 — API Gateway + Auth + Throttling
 
-**API Gateway Resource Tree:** [API Gateway Resource Tree](../assets/MH4_source_tree.png)
-**Usage Plan:** [Usage Plan](../assets/MH4_usage_plan.png)
-**API Key:** [API Key](../assets/MH4_api_key.png)
-**Request Có Xác Thực (200):** [Request Có Xác Thực (200)](../assets/MH4_200.png)
-**Request Không Có Xác Thực (403):** [Request Không Có Xác Thực (403)](../assets/MH4_403.png)
-**Thay Đổi Code Ứng Dụng ở FE:** [Thay Đổi Code Ứng Dụng ở FE](../assets/MH4_code_change.png)
+**API Gateway Resource Tree:** ![API Gateway Resource Tree](../assets/MH4_source_tree.png)
+**Usage Plan:** ![Usage Plan](../assets/MH4_usage_plan.png)
+**API Key:** ![API Key](../assets/MH4_api_key.png)
+**Request Có Xác Thực (200):** ![Request Có Xác Thực (200)](../assets/MH4_200.png)
+**Request Không Có Xác Thực (403):** ![Request Không Có Xác Thực (403)](../assets/MH4_403.png)
+**Thay Đổi Code Ứng Dụng ở FE:** ![Thay Đổi Code Ứng Dụng ở FE](../assets/MH4_code_change.png)
