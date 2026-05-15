@@ -4,7 +4,7 @@
 
 **Rationale:** Our stack includes Lambda functions (`Market_Updater`, `Asset_Reader`, `Data_Aggregation_Worker`) in VPC-1 private application subnets that route outbound traffic through NAT Gateways to reach AWS services such as Bedrock, EventBridge, Secrets Manager, and S3. Because internet egress exists via NAT Gateway, Path A (AWS Network Firewall) is required per the W5 rubric.
 
-![Architecture — Lambda traffic path through Firewall to NAT](../assets/1778823262088_image.png)
+![Architecture — Lambda traffic path through Firewall to NAT](../assets/Firewall.png)
 *VPC-1 (10.1.0.0/16) AZ-1: Lambda functions in Private Application Subnet → Firewall Endpoint (Firewall Subnet 10.1.130.0/24) → NAT Gateway (Public Subnet 10.1.128.0/24) → Internet Gateway → Internet / AWS EventBridge.*
 
 ---
@@ -92,7 +92,7 @@ Traffic path: **Lambda (private app subnet) → Firewall Endpoint → NAT Gatewa
 **Retention:** 7 days
 **Destination:** CloudWatch Logs
 
-![Firewall FLOW logs — both AZs active](../assets/1778823268209_image.png)
+![Firewall FLOW logs — both AZs active](../assets/Firewall_Flowlog.png)
 *CloudWatch log group `/aws/network-firewall/Xbrain-w5/flow` — active FLOW log entries from `Xbrain-w5-network-firewall` in both `us-west-2a` and `us-west-2b`. Timestamps 2026-05-15T04:12–13:12 UTC confirm live traffic is being inspected and passed through both AZ firewall endpoints.*
 
 ---
@@ -188,7 +188,7 @@ Default security groups in both VPCs have all rules removed — any resource acc
 
 **Result:** ✅ Confirmed.
 
-![Firewall FLOW logs — both AZs active](../assets/1778823268209_image.png)
+![Firewall FLOW logs — both AZs active](../assets/Firewall_Flowlog.png)
 *CloudWatch `/aws/network-firewall/Xbrain-w5/flow` — multiple entries from both `us-west-2a` and `us-west-2b`. Firewall name `Xbrain-w5-network-firewall` confirms correct firewall is processing traffic before NAT Gateway.*
 
 ---
@@ -197,7 +197,7 @@ Default security groups in both VPCs have all rules removed — any resource acc
 
 | Control | Status | Evidence |
 |---------|--------|---------|
-| AWS Network Firewall deployed (both AZs) | ✅ | `assets/1778823262088_image.png` |
+| AWS Network Firewall deployed (both AZs) | ✅ | `assets/Firewall.png` |
 | Stateful egress allowlist — blocks non-AWS traffic | ✅ | `terraform/network_firewall.tf` |
 | Private app route tables `0.0.0.0/0` → Firewall Endpoint | ✅ | `terraform/route_tables.tf` |
 | Firewall Subnet `0.0.0.0/0` → NAT Gateway | ✅ | `terraform/route_tables.tf` |
