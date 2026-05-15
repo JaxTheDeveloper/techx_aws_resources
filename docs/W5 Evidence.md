@@ -37,7 +37,7 @@ Implement granular security controls within the Database VPC to enforce the Prin
 
 ---
 
-# MH5 - GROUP 1:
+# MH5:
 
 ## Serverless Scaling Pattern — Handle Load Correctly
 
