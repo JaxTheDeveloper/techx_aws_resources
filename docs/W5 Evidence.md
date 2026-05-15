@@ -37,6 +37,29 @@ Implement granular security controls within the Database VPC to enforce the Prin
 
 ---
 
+# MH4 — API Gateway + Auth + Throttling
+
+### 1. API Gateway Resource Tree:
+The structural deployment tree and Stage configuration for the w5-BE-api on AWS API Gateway. The active prod stage exposes two core routes mapped to their respective backend services: POST /market-push for ingesting data streams and GET /reader-asset for retrieving database payloads.
+ ![API Gateway Resource Tree](../assets/MH4_source_tree.png)
+### 2. Usage Plan:
+Throttling and quota configuration for the w5-usage-plan (ID: eeo2tc). It establishes strict API utilization boundaries—setting a steady rate of 20 requests per second, a maximum burst of 50 requests, and a monthly quota of 50,000 requests—enforced across the prod stage of the w5-BE-api.
+ ![Usage Plan](../assets/MH4_usage_plan.png)
+### 3. API Key:
+Configuration details of the AWS API Gateway API Key named w5-api-key in an Active status. The key has been successfully created and linked to the w5-usage-plan, allowing authenticated access to the target API stage.
+ ![API Key](../assets/MH4_api_key.png)
+### 4. Request Có Xác Thực (200):
+Successful end-to-end integration test of the GET /reader-asset endpoint returning an HTTP/1.1 200 OK status code. The API Gateway successfully authenticates the request via the x-api-key header and passes it to the Lambda function, which fetches and returns the raw JSON payload from the Amazon RDS PostgreSQL database (w5).
+ ![Request Có Xác Thực (200)](../assets/MH4_200.png)
+### 5. Request Không Có Xác Thực (403):
+Verification of the API Gateway's built-in security and authentication mechanism. When a client attempts to invoke the /reader-asset endpoint without a valid API Key in the headers, the Gateway automatically blocks the request and rejects it with an HTTP/1.1 403 Forbidden error to protect backend resources.
+ ![Request Không Có Xác Thực (403)](../assets/MH4_403.png)
+### 6. Thay Đổi Code Ứng Dụng ở FE:
+Frontend source code implementation for the asynchronous requestJson function using the Native Fetch API. The base URL is configured dynamically via the VITE_API_BASE_URL environment variable to target the AWS API Gateway endpoint, automatically appending standard application/json content-type headers
+ ![Thay Đổi Code Ứng Dụng ở FE](../assets/MH4_code_change.png)
+
+---
+
 # MH5:
 
 ## Serverless Scaling Pattern — Handle Load Correctly
