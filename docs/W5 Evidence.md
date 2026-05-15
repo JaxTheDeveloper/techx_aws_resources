@@ -127,7 +127,7 @@ Resources:
 Backups successfully restored.
 
 ![Restore-1](../assets/efs10.png)
-![Restore-2](../assets/efs11.png)
+![Restore-2](../assets/efs11.jpg)
 
 ---
 
@@ -148,12 +148,12 @@ Throttling and quota configuration for the w5-usage-plan (ID: eeo2tc). It establ
 Configuration details of the AWS API Gateway API Key named w5-api-key in an Active status. The key has been successfully created and linked to the w5-usage-plan, allowing authenticated access to the target API stage.
 ![API Key](../assets/MH4_api_key.png)
 
-### 4. Request Có Xác Thực (200):
+### 4. Authentication Request (200):
 
 Successful end-to-end integration test of the GET /reader-asset endpoint returning an HTTP/1.1 200 OK status code. The API Gateway successfully authenticates the request via the x-api-key header and passes it to the Lambda function, which fetches and returns the raw JSON payload from the Amazon RDS PostgreSQL database (w5).
 ![Request Có Xác Thực (200)](../assets/MH4_200.png)
 
-### 5. Request Không Có Xác Thực (403):
+### 5. Request without Authentication (403):
 
 Verification of the API Gateway's built-in security and authentication mechanism. When a client attempts to invoke the /reader-asset endpoint without a valid API Key in the headers, the Gateway automatically blocks the request and rejects it with an HTTP/1.1 403 Forbidden error to protect backend resources.
 ![Request Không Có Xác Thực (403)](../assets/MH4_403.png)
