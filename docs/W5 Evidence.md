@@ -1,133 +1,167 @@
-**Flowlogs**
+## Flow Logs
 
 Set up VPC Flow Logs for both VPCs (App and DB) to monitor all network traffic passing through ENI.
 
-- **Aggregation Interval:** 1 minute (To ensure the highest real-time accuracy).
-- **Destination:** CloudWatch Logs Group `/aws/vpc/flow-logs/xbrain-w5-app` and `/aws/vpc/flow-logs/xbrain-w5-db`.
+- **Aggregation Interval:** 1 minute (To ensure the highest real-time accuracy)
+- **Destination:** CloudWatch Logs Group `/aws/vpc/flow-logs/xbrain-w5-app` and `/aws/vpc/flow-logs/xbrain-w5-db`
 
-[image1]: ../assets/flowlogs1.png
-[image2]: ../assets/flowlogs2.png
+![Flowlogs-1](../assets/flowlogs1.png)
+![Flowlogs-2](../assets/flowlogs2.png)
 
-Separating Log Groups for each VPC and setting a 1-minute interval makes troubleshooting and auditing more accurate, meeting observability requirements.  
-[image3]: ../assets/flowlogs3.png
+Separating Log Groups for each VPC and setting a 1-minute interval makes troubleshooting and auditing more accurate, meeting observability requirements.
 
-[image4]: ../assets/flowlogs4.png
+![Flowlogs-3](../assets/flowlogs3.png)
+![Flowlogs-4](../assets/flowlogs4.png)
 
 Use CloudWatch Logs Insights to query and confirm that traffic from the App Tier (VPC1) has successfully connected to the Database Tier (VPC2).
 
-**Evidence analysis:**
+### Evidence analysis
 
-- **Source IP:** 10.1.47.229 (Located within the VPC1 subnet).
-- **Destination IP:** 10.2.0.116 (Located within the VPC2 subnet \- where RDS is hosted).
-- **Destination Port:** 5432 (PostgreSQL protocol).
-- **Action: ACCEPT**.
+- **Source IP:** 10.1.47.229 (Located within the VPC1 subnet)
+- **Destination IP:** 10.2.0.116 (Located within the VPC2 subnet – where RDS is hosted)
+- **Destination Port:** 5432 (PostgreSQL protocol)
+- **Action:** ACCEPT
 
-[image5]: ../assets/flowlogs5.png
+![Flowlogs-5](../assets/flowlogs5.png)
 
 Implement granular security controls within the Database VPC to enforce the Principle of Least Privilege and prevent lateral movement.
 
-**Evidence Analysis:**
+### Evidence Analysis
 
-- **Source IP:** 10.2.0.150 (Internal resource within DB VPC).
-- **Destination IP:** 10.2.1.158 (Database instance).
-- **Destination Port:** 5432 (PostgreSQL).
-- **Action:** **REJECT**.
+- **Source IP:** 10.2.0.150 (Internal resource within DB VPC)
+- **Destination IP:** 10.2.1.158 (Database instance)
+- **Destination Port:** 5432 (PostgreSQL)
+- **Action:** REJECT
 
-[image6]: ../assets/flowlogs6.png
-
-##
+![Flowlogs-6](../assets/flowlogs6.png)
 
 ---
 
-# MH3:
+# MH3
 
-The Amazon EFS (Regional) file system is initialized to optimize high availability and automatic scalability. The system is fully secured through on-premises data encryption (Encryption at rest) with AWS KMS, and includes Lifecycle Management policies to optimize storage costs over time.  
-[image7]: ../assets/efs1.png
+The Amazon EFS (Regional) file system is initialized to optimize high availability and automatic scalability. The system is fully secured through encryption at rest with AWS KMS and includes Lifecycle Management policies to optimize storage costs over time.
 
-Establish Mount Targets across the Multi-Availability Zones (Multi-AZ) of VPC1. Implementing Security Group (SG-EFS) helps tightly control traffic from different resource tiers, ensuring that only valid connections can interact with the storage system.  
-[image8]: ../assets/efs2.png
+![EFS-1](../assets/efs1.png)
 
-Configure the Access Point (AP-MarketData) to manage file access permissions at a granular level. By enforcing POSIX identity (UID/GID: 1000\) and root directory permissions (0755), this configuration completely eliminates permission conflicts when multiple services access data simultaneously.  
-[image9]: ../assets/efs3.png
+Establish Mount Targets across Multi-Availability Zones (Multi-AZ) of VPC1. Security Group (SG-EFS) tightly controls traffic from resource tiers to ensure only valid connections interact with the storage system.
 
-The EFS was successfully mounted to the AWS Lambda function via the Access Point at /mnt/efs. The actual log results show the ACCEPT status on the data streams, confirming that the system is network-ready and operational.  
-[image10]: ../assets/efs4.png
+![EFS-2](../assets/efs2.png)
 
-**BACKUPS**
+Configure the Access Point (AP-MarketData) to manage file access permissions at a granular level. Enforcing POSIX identity (UID/GID: 1000) and root directory permissions (0755) eliminates permission conflicts when multiple services access data.
 
-AWS Backup Vault Management
+![EFS-3](../assets/efs3.png)
 
-- Setting up the Backup Vault: Initialize Huy-Test-Vault as the central recovery point management hub. The system is protected by specialized AWS KMS encryption, ensuring absolute integrity and security for backup data.
-  - Managing Recovery Points: The vault currently manages 8 diverse recovery points for core resources:
-  - EFS (EFS-W5): Completed scheduled backups.
-  - RDS (xbrain-w5-postgresql): Supports both snapshots and continuous backup capabilities, optimizing RPO (Recovery Point Objective).
-  - S3 (my-frontend-bucket-w5): Successful snapshot taken for the user interface layer.
+EFS was successfully mounted to AWS Lambda via the Access Point at `/mnt/efs`. Logs confirm ACCEPT status and system readiness.
 
-[image11]: ../assets/efs5.png
+![EFS-4](../assets/efs4.png)
 
-Backup Rule Configuration
+---
 
-- Backup Rule (Huy-test-backup-rule): Establish an automatic and consistent backup strategy for the entire infrastructure.
+# BACKUPS
 
-Schedule and Frequency:
+## AWS Backup Vault Management
 
-- Frequency: Hourly backups, starting at 09:15 (Vietnam Time \- UTC+07:00).
-- Backup Window: Set the start time to 1 hour and the completion time to 2 hours to avoid impacting system performance.
-- Recovery Feature (PITR): Enable Continuous Backups, allowing point-in-time data recovery for critical services such as RDS and S3.
+- Initialize **Huy-Test-Vault** as the central recovery hub
+- Protected by AWS KMS encryption
 
-Cross-Region Copy Strategy:
+Recovery points include:
 
-- Destination: Automatically create a copy in the US East (N. Virginia) region within the Huy-test-Backup-Region2 vault. Objective: Ensure disaster recovery capabilities even in the event of a failure across the entire primary region.
-- Lifecycle and Storage: Establish flexible retention periods for copies, optimizing costs between warm and cold storage.
-  [image12]: ../assets/efs6.png
+- EFS (EFS-W5): Scheduled backups completed
+- RDS (xbrain-w5-postgresql): Snapshots + continuous backup
+- S3 (my-frontend-bucket-w5): Snapshot completed
 
-Backup Resource Assignment  
-Assigning strategic resources to the Backup Plan is done through the IAM Role (backup-role), ensuring consistent execution permissions across the entire infrastructure:
+![Backup-1](../assets/efs5.png)
 
-- S3 Resource Group (Huy-Test3-resource)
-- Core Services Resource Group (Huy_backup_resource_RDSandEFS):
-  - File System (EFS): fs-0bac19e89f1687dd5.
-  - Database (RDS): xbrain-w5-postgresql.
+---
 
-  [image13]: ../assets/efs7.png
-  [image14]: ../assets/efs8.png
+## Backup Rule Configuration
 
-Evidence: Backup Execution Results (Backup Jobs)
+Backup Rule **Huy-test-backup-rule** ensures automated backups.
 
-- Status: System is operating stably with most tasks achieving Completed (Success).
-- Resources: Backup successful for the entire infrastructure including RDS, EFS, and S3.
-- Policy: Synchronized data retention period of 35 days.
-- Error resolution: The "Access denied" error (May 14th) has been completely resolved; the latest backups (May 15th) were successful, ensuring data availability.
+### Schedule
 
-[image15]: ../assets/efs9.png
+- Hourly backups starting **09:15 (UTC+07)**
+- Backup window: start 1 hour – complete 2 hours
+- **PITR enabled** for RDS & S3
 
-The backups have been restored.
+### Cross-Region Copy
 
-[image16]: ../assets/efs10.png
-[image17]: ../assets/efs11.png
+- Destination: **US East (N. Virginia)** → `Huy-test-Backup-Region2` vault
+- Enables disaster recovery across regions
+- Lifecycle optimized for warm/cold storage
+
+![Backup-2](../assets/efs6.png)
+
+---
+
+## Backup Resource Assignment
+
+IAM Role **backup-role** ensures consistent permissions.
+
+Resources:
+
+- S3 Resource Group: `Huy-Test3-resource`
+- Core Services Group: `Huy_backup_resource_RDSandEFS`
+  - EFS: `fs-0bac19e89f1687dd5`
+  - RDS: `xbrain-w5-postgresql`
+
+![Backup-3](../assets/efs7.png)
+![Backup-4](../assets/efs8.png)
+
+---
+
+## Evidence: Backup Execution Results
+
+- Status: **Completed (Success)**
+- Resources: RDS, EFS, S3
+- Retention: **35 days**
+- Error "Access denied" (May 14) → **Resolved**
+- Latest backups (May 15) successful
+
+![Backup-5](../assets/efs9.png)
+
+---
+
+## Restore Result
+
+Backups successfully restored.
+
+![Restore-1](../assets/efs10.png)
+![Restore-2](../assets/efs11.png)
 
 ---
 
 # MH4 — API Gateway + Auth + Throttling
 
 ### 1. API Gateway Resource Tree:
+
 The structural deployment tree and Stage configuration for the w5-BE-api on AWS API Gateway. The active prod stage exposes two core routes mapped to their respective backend services: POST /market-push for ingesting data streams and GET /reader-asset for retrieving database payloads.
- ![API Gateway Resource Tree](../assets/MH4_source_tree.png)
+![API Gateway Resource Tree](../assets/MH4_source_tree.png)
+
 ### 2. Usage Plan:
+
 Throttling and quota configuration for the w5-usage-plan (ID: eeo2tc). It establishes strict API utilization boundaries—setting a steady rate of 20 requests per second, a maximum burst of 50 requests, and a monthly quota of 50,000 requests—enforced across the prod stage of the w5-BE-api.
- ![Usage Plan](../assets/MH4_usage_plan.png)
+![Usage Plan](../assets/MH4_usage_plan.png)
+
 ### 3. API Key:
+
 Configuration details of the AWS API Gateway API Key named w5-api-key in an Active status. The key has been successfully created and linked to the w5-usage-plan, allowing authenticated access to the target API stage.
- ![API Key](../assets/MH4_api_key.png)
+![API Key](../assets/MH4_api_key.png)
+
 ### 4. Request Có Xác Thực (200):
+
 Successful end-to-end integration test of the GET /reader-asset endpoint returning an HTTP/1.1 200 OK status code. The API Gateway successfully authenticates the request via the x-api-key header and passes it to the Lambda function, which fetches and returns the raw JSON payload from the Amazon RDS PostgreSQL database (w5).
- ![Request Có Xác Thực (200)](../assets/MH4_200.png)
+![Request Có Xác Thực (200)](../assets/MH4_200.png)
+
 ### 5. Request Không Có Xác Thực (403):
+
 Verification of the API Gateway's built-in security and authentication mechanism. When a client attempts to invoke the /reader-asset endpoint without a valid API Key in the headers, the Gateway automatically blocks the request and rejects it with an HTTP/1.1 403 Forbidden error to protect backend resources.
- ![Request Không Có Xác Thực (403)](../assets/MH4_403.png)
+![Request Không Có Xác Thực (403)](../assets/MH4_403.png)
+
 ### 6. Thay Đổi Code Ứng Dụng ở FE:
+
 Frontend source code implementation for the asynchronous requestJson function using the Native Fetch API. The base URL is configured dynamically via the VITE_API_BASE_URL environment variable to target the AWS API Gateway endpoint, automatically appending standard application/json content-type headers
- ![Thay Đổi Code Ứng Dụng ở FE](../assets/MH4_code_change.png)
+![Thay Đổi Code Ứng Dụng ở FE](../assets/MH4_code_change.png)
 
 ---
 
