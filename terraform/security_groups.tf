@@ -18,7 +18,7 @@
 
 resource "aws_security_group" "lambda_sg" {
   name        = "${var.project_name}-lambda-sg"
-  description = "Lambda functions — no inbound, controlled outbound only"
+  description = "Lambda functions - no inbound, controlled outbound only"
   vpc_id      = aws_vpc.vpc1.id
 
   # No inbound rules — Lambda is triggered by API Gateway / EventBridge, not HTTP
@@ -66,7 +66,7 @@ resource "aws_security_group" "lambda_sg" {
 
 resource "aws_security_group" "efs_sg" {
   name        = "${var.project_name}-efs-sg"
-  description = "EFS mount target — NFS inbound from Lambda SG only"
+  description = "EFS mount target - NFS inbound from Lambda SG only"
   vpc_id      = aws_vpc.vpc1.id
 
   # Inbound: NFS from Lambda only (SG reference — not CIDR)
@@ -103,7 +103,7 @@ resource "aws_security_group" "efs_sg" {
 
 resource "aws_security_group" "rds_proxy_sg" {
   name        = "${var.project_name}-rds-proxy-sg"
-  description = "RDS Proxy — accept from Lambda VPC only, connect to RDS"
+  description = "RDS Proxy - accept from Lambda VPC only, connect to RDS"
   vpc_id      = aws_vpc.vpc2.id
 
   # Inbound: PostgreSQL from VPC-1 app subnets (Lambda via peering)
@@ -148,7 +148,7 @@ resource "aws_security_group" "rds_proxy_sg" {
 
 resource "aws_security_group" "rds_sg" {
   name        = "${var.project_name}-rds-sg"
-  description = "RDS PostgreSQL — accept from RDS Proxy only, no outbound"
+  description = "RDS PostgreSQL - accept from RDS Proxy only, no outbound"
   vpc_id      = aws_vpc.vpc2.id
 
   # Inbound: PostgreSQL from RDS Proxy only

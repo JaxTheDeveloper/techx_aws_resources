@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Project name used as a prefix for all resources"
   type        = string
-  default     = "Xbrain-week-5"
+  default     = "Xbrain-w5"
 }
 
 variable "environment" {
