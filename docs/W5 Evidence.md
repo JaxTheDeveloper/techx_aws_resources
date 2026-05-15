@@ -35,6 +35,77 @@ Implement granular security controls within the Database VPC to enforce the Prin
 
 [image6]: ../assets/flowlogs6.png
 
+##
+
+---
+
+# MH3:
+
+The Amazon EFS (Regional) file system is initialized to optimize high availability and automatic scalability. The system is fully secured through on-premises data encryption (Encryption at rest) with AWS KMS, and includes Lifecycle Management policies to optimize storage costs over time.  
+[image7]: ../assets/efs1.png
+
+Establish Mount Targets across the Multi-Availability Zones (Multi-AZ) of VPC1. Implementing Security Group (SG-EFS) helps tightly control traffic from different resource tiers, ensuring that only valid connections can interact with the storage system.  
+[image8]: ../assets/efs2.png
+
+Configure the Access Point (AP-MarketData) to manage file access permissions at a granular level. By enforcing POSIX identity (UID/GID: 1000\) and root directory permissions (0755), this configuration completely eliminates permission conflicts when multiple services access data simultaneously.  
+[image9]: ../assets/efs3.png
+
+The EFS was successfully mounted to the AWS Lambda function via the Access Point at /mnt/efs. The actual log results show the ACCEPT status on the data streams, confirming that the system is network-ready and operational.  
+[image10]: ../assets/efs4.png
+
+**BACKUPS**
+
+AWS Backup Vault Management
+
+- Setting up the Backup Vault: Initialize Huy-Test-Vault as the central recovery point management hub. The system is protected by specialized AWS KMS encryption, ensuring absolute integrity and security for backup data.
+  - Managing Recovery Points: The vault currently manages 8 diverse recovery points for core resources:
+  - EFS (EFS-W5): Completed scheduled backups.
+  - RDS (xbrain-w5-postgresql): Supports both snapshots and continuous backup capabilities, optimizing RPO (Recovery Point Objective).
+  - S3 (my-frontend-bucket-w5): Successful snapshot taken for the user interface layer.
+
+[image11]: ../assets/efs5.png
+
+Backup Rule Configuration
+
+- Backup Rule (Huy-test-backup-rule): Establish an automatic and consistent backup strategy for the entire infrastructure.
+
+Schedule and Frequency:
+
+- Frequency: Hourly backups, starting at 09:15 (Vietnam Time \- UTC+07:00).
+- Backup Window: Set the start time to 1 hour and the completion time to 2 hours to avoid impacting system performance.
+- Recovery Feature (PITR): Enable Continuous Backups, allowing point-in-time data recovery for critical services such as RDS and S3.
+
+Cross-Region Copy Strategy:
+
+- Destination: Automatically create a copy in the US East (N. Virginia) region within the Huy-test-Backup-Region2 vault. Objective: Ensure disaster recovery capabilities even in the event of a failure across the entire primary region.
+- Lifecycle and Storage: Establish flexible retention periods for copies, optimizing costs between warm and cold storage.
+  [image12]: ../assets/efs6.png
+
+Backup Resource Assignment  
+Assigning strategic resources to the Backup Plan is done through the IAM Role (backup-role), ensuring consistent execution permissions across the entire infrastructure:
+
+- S3 Resource Group (Huy-Test3-resource)
+- Core Services Resource Group (Huy_backup_resource_RDSandEFS):
+  - File System (EFS): fs-0bac19e89f1687dd5.
+  - Database (RDS): xbrain-w5-postgresql.
+
+  [image13]: ../assets/efs7.png
+  [image14]: ../assets/efs8.png
+
+Evidence: Backup Execution Results (Backup Jobs)
+
+- Status: System is operating stably with most tasks achieving Completed (Success).
+- Resources: Backup successful for the entire infrastructure including RDS, EFS, and S3.
+- Policy: Synchronized data retention period of 35 days.
+- Error resolution: The "Access denied" error (May 14th) has been completely resolved; the latest backups (May 15th) were successful, ensuring data availability.
+
+[image15]: ../assets/efs9.png
+
+The backups have been restored.
+
+[image16]: ../assets/efs10.png
+[image17]: ../assets/efs11.png
+
 ---
 
 # MH5:
