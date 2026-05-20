@@ -15,8 +15,8 @@
 | 1.1 | Tag tất cả billable resources với **4 key bắt buộc**: `Application=<value>`, `Owner=<value>`, `Environment=dev`, `CostCenter=G1` <br> Resources phải tag: Lambda (Market_Updater, Asset_Reader, Data_Aggregation_Worker), RDS `xbrain-postgresql`, EFS, API Gateway `w5-BE-api`, S3, NAT Gateway, Network Firewall | — |
 | 1.2 | Vào **Billing Console → Cost allocation tags → Activate** cả 2 key `Owner` và `Application` — bước riêng biệt, không phải chỉ tag trên resource là đủ | — |
 | 1.3 | Cấu hình **AWS Budgets daily $150** với SNS alert (tái dùng cho MH-COST-A) | — |
-| 1.4 | Cấu hình **Cost Explorer filter** theo `Application=<value>`, chụp screenshot sau ≥ 24h deploy | — |
-| 1.5 | Viết **1 đoạn phân tích top 3 cost driver** của XBrain stack (NAT Gateway, RDS, Lambda/EFS thường là top) | — |
+| 1.4 | Cấu hình **Cost Explorer filter**, chụp screenshot cho thấy chi phí theo tag dimension của bạn sau ít nhất 24 giờ data redeploy | — |
+| 1.5 | Viết **1 đoạn phân tích top 3 cost driver** của project stack (NAT Gateway, RDS, Lambda/EFS thường là top) | — |
 | 1.6 | Viết **1-page tagging strategy document**: các key được dùng, allowed values, cách enforce trong real account | — |
 
 **Pass condition:** 4 tag key trên tất cả billable resource + cost allocation tags activated + ≥1 tool configured + baseline screenshot + tagging doc.
