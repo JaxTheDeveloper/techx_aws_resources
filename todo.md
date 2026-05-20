@@ -9,6 +9,7 @@
 | 3 | Làm phần **Alert Log** |
 
 ## 1. MH-COST-V — Cost Visibility & Attribution
+@Phong 
 
 | # | Task | Owner |
 |---|------|-------|
@@ -31,6 +32,7 @@
 ---
 
 ## 2. MH-COST-A — Cost Control & Action
+@Hung, Hien
 
 | # | Task | Owner |
 |---|------|-------|
@@ -58,6 +60,8 @@
 ## 3. MH-OBS — CloudWatch Observability
 > **Generate data trước ngày demo (thứ 5)** — alarm ở `INSUFFICIENT_DATA` vào thứ 6 = mất điểm
 
+@Huy, Dat, Duong
+
 | # | Task | Owner |
 |---|------|-------|
 | 3.1 | Publish custom metrics — thứ gì đó ứng dụng của bạn đo và publish tường minh bằng `PutMetricData` API. Nghĩ về cái ứng dụng của bạn làm ở tầng business logic| — |
@@ -73,6 +77,8 @@
 
 ## 4. MH-SEC — Self-Healing Security Guard
 > Implement sớm để có thời gian test vòng lặp detect→fix
+
+@Vu, Quan
 
 | # | Task | Owner |
 |---|------|-------|
