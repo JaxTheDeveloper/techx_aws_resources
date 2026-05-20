@@ -19,7 +19,12 @@
 | 1.5 | Viết **1 đoạn phân tích top 3 cost driver** của project stack (NAT Gateway, RDS, Lambda/EFS thường là top) | — |
 | 1.6 | Viết **1-page tagging strategy document**: các key được dùng, allowed values, cách enforce trong real account | — |
 
-**Pass condition:** 4 tag key trên tất cả billable resource + cost allocation tags activated + ≥1 tool configured + baseline screenshot + tagging doc.
+**Pass condition:** 
+- [ ] 4 tag key trên tất cả billable resource
+- [ ] cost allocation tags activated
+- [ ] ≥1 cost monitoring tool configured
+- [ ] baseline cost screenshot kèm quan sát viết tay (???)
+- [ ] tagging doc
 
 **Pitfall:** Tag resource mà quên activate trong Billing Console → tags không hiện trong Cost Explorer.
 
