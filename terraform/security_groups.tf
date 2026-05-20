@@ -97,6 +97,38 @@ resource "aws_security_group" "efs_sg" {
   }
 }
 
+###############################################################################
+# VPC-2 — VPC ENDPOINT SECURITY GROUP
+# Accepts HTTPS from RDS Proxy (Secrets Manager lookups)
+###############################################################################
+
+resource "aws_security_group" "vpc2_endpoint_sg" {
+  name        = "${var.project_name}-vpc2-endpoint-sg"
+  description = "VPC-2 interface endpoint - HTTPS from RDS Proxy only"
+  vpc_id      = aws_vpc.vpc2.id
+
+  ingress {
+    description     = "HTTPS from RDS Proxy"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.rds_proxy_sg.id]
+  }
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name        = "${var.project_name}-vpc2-endpoint-sg"
+    Environment = var.environment
+    Purpose     = "VPC-2 interface endpoint security group"
+  }
+}
 
 ###############################################################################
 # VPC-2 — RDS PROXY SECURITY GROUP
