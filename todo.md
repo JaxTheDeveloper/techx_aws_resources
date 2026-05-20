@@ -1,4 +1,5 @@
 # W6 Task Breakdown — Group 1 (XBrain)
+> **Deadline: 17h30 21/5/2026**
 
 ## Áp dụng Feedback W5 (bắt buộc đề cập ở Part 1)
 
