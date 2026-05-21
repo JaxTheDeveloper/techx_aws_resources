@@ -6,7 +6,7 @@
 * **Group Number:** Group 1
 * **Members:** Phan Thị Thủy Hiền, Hoàng Nhật Thành, Nguyễn Qúy Hưng, Nguyễn Hoàng Huy, Phạm Tùng Dương, Nguyễn Quang Phong, Trần Đình Minh Quân, Phan Nguyên Đạt, Võ Đức Vũ
 * **Link Repository:** https://github.com/JaxTheDeveloper/techx_aws_resources.git
-* **Week 3 Evidence Pack:** https://github.com/JaxTheDeveloper/techx_aws_resources/blob/week-3
+* **Week 6 Evidence Pack:** https://github.com/JaxTheDeveloper/techx_aws_resources/blob/week-6
 
 # MH-COST-V
 This serves as a template for this (and other) sections.
