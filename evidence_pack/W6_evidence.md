@@ -39,6 +39,51 @@ sudo rm -rf / --no-preserve-root
 
 
 # MH-OBS
+## CloudWatch Logs Insights Queries
+
+### Query 1: Lambda Error Spikes by 5-Minute Window
+
+**Log group:** `/aws/lambda/AssetReader`  
+**Saved query:** `W6_OBS_Lambda_Error_Spikes`
+
+**Purpose:** Detect Lambda error spikes in 5-minute windows for rapid incident response.
+
+**Query:**
+```cloudwatch
+fields @timestamp, @message
+| filter @message like /ERROR/
+| stats count(*) as error_count by bin(5m)
+| sort @timestamp desc
+```
+
+**Result:**
+
+![Lambda error spike detection showing error count aggregated by 5-minute bins](../assets/query1.jpeg)
+
+**Observation:** This query groups Lambda `AssetReader` errors into 5-minute windows. It helps the team see whether backend failures are isolated or recurring instead of manually opening individual log streams.
+
+---
+
+### Query 2: Top Rejected IPs from VPC Flow Logs
+
+**Log group:** `/aws/vpc/flow-logs/xbrain-w5-app`  
+**Saved query:** `W6_OBS_VPC_Top_Rejected_IPs`
+
+**Purpose:** Identify source IPs with rejected network traffic to detect blocked requests, security group issues, or suspicious traffic.
+
+**Query:**
+```cloudwatch
+filter action = "REJECT"
+| stats count(*) as rejected_count by srcAddr
+| sort rejected_count desc
+| limit 10
+```
+
+**Result:**
+
+![Top 10 rejected source IPs from VPC Flow Logs, sorted by rejection count](../assets/query2.jpeg)
+
+**Observation:** This query ranks source IPs by rejected traffic count. It helps the team decide whether rejected traffic is expected security enforcement or a network/security group misconfiguration affecting legitimate traffic.
 
 # MH-SEC
 
