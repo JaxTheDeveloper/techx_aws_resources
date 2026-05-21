@@ -48,6 +48,21 @@ sudo rm -rf / --no-preserve-root
 
 **Observation:** Lambda errors are correlated with RDS connections and API traffic to identify performance issues quickly.
 
+## CloudWatch Alarm
+
+![CloudWatch alarm in ALARM state](../assets/alarm.png)
+CloudWatch Metric Over-Threshold Evaluation & State Trigger
+
+---
+
+![CloudWatch alarm action configured to SNS](../assets/alarm_sns.png)
+Amazon SNS Downstream Notification Output
+
+**Observation:**
+CloudWatch Alarm is configured to monitor the `Errors` metric at the compute tier. The application was actively triggered to generate real datapoints and avoid the `INSUFFICIENT_DATA` state.
+Upon breaching the threshold, the alarm executes a precise state transition to trigger the downstream Amazon SNS action.
+
+
 ## CloudWatch Logs Insights Queries
 
 ### Query 1: Lambda Error Spikes by 5-Minute Window
