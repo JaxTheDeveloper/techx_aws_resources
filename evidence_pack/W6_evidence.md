@@ -1,5 +1,4 @@
-# Evidence Pack - Group 1 - Week 5
-
+# Evidence Pack - Group 1 - Week 6
 ---
 
 ## Cover
@@ -11,26 +10,69 @@
 
 # MH-COST-V
 
-This serves as a template for this (and other) sections.
+## Component 1 - Tagging Strategy Document
+Below is the image of resourceGroups, is where all the tagged resources are grouped by their tags.
 
-## Subsection
+![Resource Group Image no1](../assets/resourceGroup.png)
+![Resource Group Image no2](../assets/resourceGroup1.png)
 
-Set up VPC Flow Logs for both VPCs (App and DB) to monitor all network traffic passing through ENI.
+To ensure data integrity within AWS Cost Explorer and Billing reports, every resource must be tagged with the following four keys. Case sensitivity is strictly enforced.
 
-- **BUllet point 1** content of bullet point 1
-- **Bullet point 2** similar thing. `code goes here`.
+![Tagging Image](../assets/TagEditor1.png)
 
-To quote code, use this template
+| Tag Key | Description | Allowed Values | Workshop Value |
+| :--- | :--- | :--- | :--- |
+| **Owner** | The email address of the individual or team accountable for the resource’s cost and lifecycle. | Valid organizational email string | `masteremail@gmail.com` |
+| **Application** | The logical name of the project or workload stack. Used for cost grouping. | `Xbrain-w6-project`, `Shared-Services` | `Xbrain-w6-project` |
+| **CostCenter** | Internal billing code used to allocate cloud spend to specific departmental budgets. | `G1` | `G1` |
+| **Environment** | Defines the operational stage and risk profile of the resource. | `dev`, `prod`, `staging`, `test` | `dev` |
 
-```bash
-sudo rm -rf / --no-preserve-root
-```
+### Real-World Enforcement & Compliance
+In a production-grade AWS environment, we move beyond manual checks to automated "guardrails" that ensure 100% compliance:
 
-![alt text for img](../assets/abcdef.png)
+#### A. Proactive Prevention (SCPs)
+We implement **Service Control Policies (SCPs)** at the AWS Organization level. These policies explicitly `Deny` actions like `ec2:RunInstances` or `s3:CreateBucket` if the mandatory tags (e.g., `Owner`, `Application`) are missing from the request. This makes it impossible to deploy "orphan" resources.
 
-### Evidence analysis 1
+#### B. Standards Enforcement (Tag Policies)
+To prevent typos or inconsistent casing (e.g., `Dev` vs `dev`), we use **AWS Tag Policies**. These enforce the exact "Allowed Values" defined in the table above. Any tag that doesn't match the pre-defined list is rejected by the API.
 
-### Evidence Analysis 2
+#### C. Terraform (Infrastructure as Code)
+All infrastructure is deployed via **Terraform**. We utilize the `default_tags` feature in the AWS Provider block. This ensures that every resource automatically inherits the correct `Application`, `CostCenter`, and `Environment` tags at the moment of creation, reducing the burden on individual developers.
+
+## Component 3 - Cost monitoring tools
+
+### AWS Budget
+We use **AWS Budget** to set up cost monitoring and alerts. Budget allows us to define spending thresholds and receive notifications when costs exceed these limits.
+
+We set the Period to Daily, so the budget is calculated daily. Make sure to choose Recurring budget so that everytime it's the first day of the month, the budget is reset.
+
+![Creating Budget](../assets/CreateBudget.png)
+
+In this case, we setup a budget of 150$ to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
+- When Actual cost > 66.66% ($99.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
+- When Actual cost > 99.99% ($149.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+
+![Budget Image](../assets/BudgetDetail.png)
+![Budget Image 2](../assets/BudgetDetail1.png)
+
+### Cost Anomaly Detection
+Since we can't use Cost Allocation Tags, therefore, we use **AWS Cost Anomaly Detection** to monitor for unusual spending patterns. Anomaly detection helps identify cost spikes or outliers that may indicate a security breach or unexpected usage.
+
+![Creating Cost Anomaly](../assets/creatingCostAnomaly.png)
+
+Then we're gonna have to create a **Cost Anomaly Subscription** to receive notifications when anomalies are detected. This subscription will send alerts to the SNS topic (BudgetAlerts_Topic) and email address.
+
+We can either set the threshold for the anomaly detection to be percent-based or absolute-based.
+
+In this case, we set the threshold to be percent-based, so the anomaly detection will trigger when the actual cost exceeds 10% of the usual spent. For example: everyday we spend around $10, the threshold will be set to 10% of that, which is $1.
+
+**Clarification**: In this week, this should just be testing so we can see if the anomaly detection is working as expected. But in reality, we should have a higher threshold to avoid false positives.
+
+![Creating Cost Anomaly Subscription](../assets/creatingCostAnomalySub.png)
+
+Below is the dashboard of the cost anomaly detection. Which would also have anomalies detected log over time.
+
+![Cost Anomaly](../assets/costAnomaly.png)
 
 ---
 
@@ -175,3 +217,4 @@ To prove the CMK is actively encrypting and decrypting data in production, Cloud
 
 ### 6. Risk Analysis & Cost Justification
 
+# bonuses
