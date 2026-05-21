@@ -53,7 +53,7 @@
 
 ## 📨 Messaging & Queue
 
-- [ ] SQS — Dead-letter queue
+- [ x ] SQS — Dead-letter queue
 - [ x ] SQS — Top10_Alerts
 - [ x ] SQS — Standard_Alerts
 - [ x ] SNS Topic
