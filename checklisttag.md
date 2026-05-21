@@ -25,7 +25,7 @@
 
 ## 🖥️ Compute — Lambda Functions
 
-- [ ] Lambda — `Market_Updater`
+- [ x ] Lambda — `Market_Updater`
 - [ ] Lambda — `Asset_Router`
 - [ ] Lambda — `Anomaly_Logging_Service`
 - [ ] Lambda — `Data_Aggregation_Worker`
