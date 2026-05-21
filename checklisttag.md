@@ -14,30 +14,28 @@
 - [ ] RDS Standby
 - [ ] RDS Read Replica
 - [ ] ElastiCache AZ-1
-- [ ] ElastiCache AZ-2
 - [ ] NAT Gateway AZ-1
-- [ ] Lambda — Market_Updater
-- [ ] Lambda — Asset_Router
-- [ ] Lambda — Anomaly_Logging_Service
-- [ ] Lambda — Data_Aggregation_Worker
+- [ x ] Lambda — Market_Updater
+- [ x ] Lambda — Asset_Router
+- [ x ] Lambda — Anomaly_Logging_Service
+- [ x ] Lambda — Data_Aggregation_Worker
 
 ---
 
 ## 🖥️ Compute — Lambda Functions
 
 - [ x ] Lambda — `Market_Updater`
-- [ ] Lambda — `Asset_Router`
-- [ ] Lambda — `Anomaly_Logging_Service`
-- [ ] Lambda — `Data_Aggregation_Worker`
+- [ x ] Lambda — `Asset_Router`
+- [ x ] Lambda — `Anomaly_Logging_Service`
+- [ x ] Lambda — `Data_Aggregation_Worker`
 
 ---
 
 ## 🌐 Networking
 
-- [ ] API Gateway
-- [ ] NAT Gateway AZ-1
-- [ ] Firewall Endpoint AZ-1
-- [ ] Firewall Endpoint AZ-2
+- [ x ] API Gateway
+- [ x ] NAT Gateway AZ-1
+- [ x ] Firewall 
 - [ ] VPC Endpoint — Private Application Subnet (VPC-1)
 - [ ] VPC Endpoint — Isolated Private Subnet (VPC-2)
 
@@ -45,24 +43,20 @@
 
 ## 🗄️ Storage & Database
 
-- [ ] EFS — File System
-- [ ] EFS — Mount Target AZ-1
+- [ X ] EFS — File System
 - [ ] RDS Primary (AZ-1, VPC-2) — tag `keep=true` thêm
-- [ ] RDS Standby (AZ-2, VPC-2) — tag `keep=true` thêm
 - [ ] RDS Read Replica — **KHÔNG tag `keep=true`** (con mồi MH-COST-A)
 - [ ] RDS Proxy AZ-1
-- [ ] RDS Proxy AZ-2
 - [ ] ElastiCache AZ-1
-- [ ] ElastiCache AZ-2
 
 ---
 
 ## 📨 Messaging & Queue
 
 - [ ] SQS — Dead-letter queue
-- [ ] SQS — Top10_Alerts
-- [ ] SQS — Standard_Alerts
-- [ ] SNS Topic
+- [ x ] SQS — Top10_Alerts
+- [ x ] SQS — Standard_Alerts
+- [ x ] SNS Topic
 
 ---
 
