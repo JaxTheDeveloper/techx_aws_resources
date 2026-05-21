@@ -1,4 +1,4 @@
-# Evidence Pack - Group 1 - Week 5
+# Evidence Pack - Group 1 - Week 6
 
 ---
 
@@ -11,35 +11,88 @@
 
 # MH-COST-V
 
-This serves as a template for this (and other) sections.
+## Component 1 - Tagging Strategy Document
 
-## Subsection
+Below is the image of resourceGroups, is where all the tagged resources are grouped by their tags.
 
-Set up VPC Flow Logs for both VPCs (App and DB) to monitor all network traffic passing through ENI.
+![Resource Group Image no1](../assets/resourceGroup.png)
+![Resource Group Image no2](../assets/resourceGroup1.png)
 
-- **BUllet point 1** content of bullet point 1
-- **Bullet point 2** similar thing. `code goes here`.
+To ensure data integrity within AWS Cost Explorer and Billing reports, every resource must be tagged with the following four keys. Case sensitivity is strictly enforced.
 
-To quote code, use this template
+![Tagging Image](../assets/TagEditor1.png)
 
-```bash
-sudo rm -rf / --no-preserve-root
-```
+| Tag Key         | Description                                                                                    | Allowed Values                         | Workshop Value          |
+| :-------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------- | :---------------------- |
+| **Owner**       | The email address of the individual or team accountable for the resource’s cost and lifecycle. | Valid organizational email string      | `masteremail@gmail.com` |
+| **Application** | The logical name of the project or workload stack. Used for cost grouping.                     | `Xbrain-w6-project`, `Shared-Services` | `Xbrain-w6-project`     |
+| **CostCenter**  | Internal billing code used to allocate cloud spend to specific departmental budgets.           | `G1`                                   | `G1`                    |
+| **Environment** | Defines the operational stage and risk profile of the resource.                                | `dev`, `prod`, `staging`, `test`       | `dev`                   |
 
-![alt text for img](../assets/abcdef.png)
+### Real-World Enforcement & Compliance
 
-### Evidence analysis 1
+In a production-grade AWS environment, we move beyond manual checks to automated "guardrails" that ensure 100% compliance:
 
-### Evidence Analysis 2
+#### A. Proactive Prevention (SCPs)
+
+We implement **Service Control Policies (SCPs)** at the AWS Organization level. These policies explicitly `Deny` actions like `ec2:RunInstances` or `s3:CreateBucket` if the mandatory tags (e.g., `Owner`, `Application`) are missing from the request. This makes it impossible to deploy "orphan" resources.
+
+#### B. Standards Enforcement (Tag Policies)
+
+To prevent typos or inconsistent casing (e.g., `Dev` vs `dev`), we use **AWS Tag Policies**. These enforce the exact "Allowed Values" defined in the table above. Any tag that doesn't match the pre-defined list is rejected by the API.
+
+#### C. Terraform (Infrastructure as Code)
+
+All infrastructure is deployed via **Terraform**. We utilize the `default_tags` feature in the AWS Provider block. This ensures that every resource automatically inherits the correct `Application`, `CostCenter`, and `Environment` tags at the moment of creation, reducing the burden on individual developers.
+
+## Component 3 - Cost monitoring tools
+
+### AWS Budget
+
+We use **AWS Budget** to set up cost monitoring and alerts. Budget allows us to define spending thresholds and receive notifications when costs exceed these limits.
+
+We set the Period to Daily, so the budget is calculated daily. Make sure to choose Recurring budget so that everytime it's the first day of the month, the budget is reset.
+
+![Creating Budget](../assets/CreateBudget.png)
+
+In this case, we setup a budget of 150$ to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
+
+- When Actual cost > 66.66% ($99.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
+- When Actual cost > 99.99% ($149.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+
+![Budget Image](../assets/BudgetDetail.png)
+![Budget Image 2](../assets/BudgetDetail1.png)
+
+### Cost Anomaly Detection
+
+Since we can't use Cost Allocation Tags, therefore, we use **AWS Cost Anomaly Detection** to monitor for unusual spending patterns. Anomaly detection helps identify cost spikes or outliers that may indicate a security breach or unexpected usage.
+
+![Creating Cost Anomaly](../assets/creatingCostAnomaly.png)
+
+Then we're gonna have to create a **Cost Anomaly Subscription** to receive notifications when anomalies are detected. This subscription will send alerts to the SNS topic (BudgetAlerts_Topic) and email address.
+
+We can either set the threshold for the anomaly detection to be percent-based or absolute-based.
+
+In this case, we set the threshold to be percent-based, so the anomaly detection will trigger when the actual cost exceeds 10% of the usual spent. For example: everyday we spend around $10, the threshold will be set to 10% of that, which is $1.
+
+**Clarification**: In this week, this should just be testing so we can see if the anomaly detection is working as expected. But in reality, we should have a higher threshold to avoid false positives.
+
+![Creating Cost Anomaly Subscription](../assets/creatingCostAnomalySub.png)
+
+Below is the dashboard of the cost anomaly detection. Which would also have anomalies detected log over time.
+
+![Cost Anomaly](../assets/costAnomaly.png)
 
 ---
 
 # MH-COST-A
 
 # MH-OBS
+
 ## CloudWatch Dashboard
 
 **Dashboard:** A CloudWatch dashboard was created with:
+
 - standard Lambda duration, errors widget
 - standard RDS DatabaseConnections widget
 - standard API Gateway 4XXError, 5XXError widget
@@ -129,6 +182,17 @@ Below is the visual evidence demonstrating that Amazon EventBridge has successfu
 
 ![Image 1](../assets/Self-Healing1.jpg)
 
+### 2.1. Least-Privilege IAM Policy Configuration
+
+To ensure the intrinsic security of the automation system, the healing Lambda function is attached to an IAM Role that strictly adheres to the principle of least privilege, completely preventing any risk of privilege abuse:
+
+![Image 6](../assets/Self-Healing6.jpg)
+
+_Configuration Analysis:_
+
+- **Action Restriction (Actions):** The policy only grants exactly 3 minimal permissions to read/write the S3 Public Access configuration and basic CloudWatch logging permissions. It does not use broad administrative permissions (`s3:*`).
+- **Resource Restriction (Resources):** The S3 operation permissions are strictly locked to the exact ARNs of the 2 project buckets (`myproduct-kb-...` and `s3-backend-dependency-files`), completely eliminating any possibility of accidentally impacting other resources in the account.
+
 ---
 
 ### 3. Before / After Automation Test
@@ -172,17 +236,17 @@ A dedicated symmetric KMS key (Alias: `xbrain-rds-prod`) was provisioned. To ens
 ![KMS Key Rotation](../assets/SPC1.png)
 
 **RDS At-Rest Encryption**
-The `w6-db` instance is strictly configured to use the `xbrain-rds-prod` CMK for primary storage encryption, moving away from default AWS-managed keys to maintain full administrative control over the encryption material. 
+The `w6-db` instance is strictly configured to use the `xbrain-rds-prod` CMK for primary storage encryption, moving away from default AWS-managed keys to maintain full administrative control over the encryption material.
 ![RDS Encryption Config](../assets/SPC2.png)
 
 **CloudTrail Validation of Active Cryptographic Usage**
 To prove the CMK is actively encrypting and decrypting data in production, CloudTrail logs capture the exact `GenerateDataKey` and `Decrypt` API calls. The logs verify that `rds.amazonaws.com` and the assumed role for the RDS Proxy (`rds-proxy-role`) are actively interacting with the KMS key to securely handle database storage and secrets decryption.
 
-*GenerateDataKey Event by RDS:*
+_GenerateDataKey Event by RDS:_
 ![GenerateDataKey Event1](../assets/SPC3-2.png)
 ![GenerateDataKey Event](../assets/SPC3.png)
 
-*Decrypt Event by RDS Proxy:*
+_Decrypt Event by RDS Proxy:_
 ![Decrypt Event1](../assets/SPC4-2.png)
 ![Decrypt Event](../assets/SPC4.png)
 
@@ -190,3 +254,6 @@ To prove the CMK is actively encrypting and decrypting data in production, Cloud
 
 ### 6. Risk Analysis & Cost Justification
 
+Deploying the S3 automated remediation loop via EventBridge and Lambda incurs near-zero cost thanks to the serverless model, whereas maintaining a dedicated KMS Customer Managed Key (CMK) incurs a fixed fee of $1/month plus API call fees. This investment is entirely justified and safely within the $150 budget limit because the CMK enables automatic key rotation and generates a transparent audit trail on CloudTrail for every database-tier data decryption operation, meeting strict compliance standards that default AWS-managed keys cannot achieve.
+
+# bonuses
