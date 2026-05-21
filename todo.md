@@ -22,7 +22,7 @@
 | 1.6 | Viết **1-page tagging strategy document**: các key được dùng, allowed values, cách enforce trong real account | — |
 
 **Pass condition:** 
-- [ ] 4 tag key trên tất cả billable resource
+- [x] 4 tag key trên tất cả billable resource
 - [ ] cost allocation tags activated
 - [ ] ≥1 cost monitoring tool configured
 - [ ] baseline cost screenshot kèm quan sát viết tay (???)
