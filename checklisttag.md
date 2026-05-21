@@ -10,11 +10,11 @@
 
 ## ⚡ Ưu tiên tag trước (tốn tiền nhiều nhất)
 
-- [ ] RDS Primary
-- [ ] RDS Standby
-- [ ] RDS Read Replica
-- [ ] ElastiCache AZ-1
-- [ ] NAT Gateway AZ-1
+- [x] RDS Primary
+- [ ] RDS Standby (doesnt have)
+- [ ] RDS Read Replica (doesnt have)
+- [ ] ElastiCache AZ-1 (doesnt have)
+- [x] NAT Gateway AZ-1
 - [x] Lambda — Market_Updater
 - [x] Lambda — Asset_Router
 - [x] Lambda — Anomaly_Logging_Service
