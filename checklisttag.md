@@ -15,27 +15,27 @@
 - [ ] RDS Read Replica
 - [ ] ElastiCache AZ-1
 - [ ] NAT Gateway AZ-1
-- [ x ] Lambda — Market_Updater
-- [ x ] Lambda — Asset_Router
-- [ x ] Lambda — Anomaly_Logging_Service
-- [ x ] Lambda — Data_Aggregation_Worker
+- [x] Lambda — Market_Updater
+- [x] Lambda — Asset_Router
+- [x] Lambda — Anomaly_Logging_Service
+- [x] Lambda — Data_Aggregation_Worker
 
 ---
 
 ## 🖥️ Compute — Lambda Functions
 
-- [ x ] Lambda — `Market_Updater`
-- [ x ] Lambda — `Asset_Router`
-- [ x ] Lambda — `Anomaly_Logging_Service`
-- [ x ] Lambda — `Data_Aggregation_Worker`
+- [x] Lambda — `Market_Updater`
+- [x] Lambda — `Asset_Router`
+- [x] Lambda — `Anomaly_Logging_Service`
+- [x] Lambda — `Data_Aggregation_Worker`
 
 ---
 
 ## 🌐 Networking
 
-- [ x ] API Gateway
-- [ x ] NAT Gateway AZ-1
-- [ x ] Firewall 
+- [x] API Gateway
+- [x] NAT Gateway AZ-1
+- [x] Firewall 
 - [ ] VPC Endpoint — Private Application Subnet (VPC-1)
 - [ ] VPC Endpoint — Isolated Private Subnet (VPC-2)
 
