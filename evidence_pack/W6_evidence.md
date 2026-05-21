@@ -164,9 +164,11 @@ The `w6-db` instance is strictly configured to use the `xbrain-rds-prod` CMK for
 To prove the CMK is actively encrypting and decrypting data in production, CloudTrail logs capture the exact `GenerateDataKey` and `Decrypt` API calls. The logs verify that `rds.amazonaws.com` and the assumed role for the RDS Proxy (`rds-proxy-role`) are actively interacting with the KMS key to securely handle database storage and secrets decryption.
 
 *GenerateDataKey Event by RDS:*
+![GenerateDataKey Event1](../assets/SPC3-2.png)
 ![GenerateDataKey Event](../assets/SPC3.png)
 
 *Decrypt Event by RDS Proxy:*
+![Decrypt Event1](../assets/SPC4-2.png)
 ![Decrypt Event](../assets/SPC4.png)
 
 ---
