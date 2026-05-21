@@ -12,7 +12,7 @@
 
 - [x] RDS Primary
 - [ ] RDS Standby (doesnt have)
-- [ ] RDS Read Replica (doesnt have)
+- [x] RDS Read Replica 
 - [ ] ElastiCache AZ-1 (doesnt have)
 - [x] NAT Gateway AZ-1
 - [x] Lambda — Market_Updater
@@ -36,18 +36,18 @@
 - [x] API Gateway
 - [x] NAT Gateway AZ-1
 - [x] Firewall 
-- [ ] VPC Endpoint — Private Application Subnet (VPC-1)
-- [ ] VPC Endpoint — Isolated Private Subnet (VPC-2)
+- [ ] VPC Endpoint — Private Application Subnet (VPC-1) (doesnt have)
+- [ ] VPC Endpoint — Isolated Private Subnet (VPC-2) (doesnt have)
 
 ---
 
 ## 🗄️ Storage & Database
 
 - [ X ] EFS — File System
-- [ ] RDS Primary (AZ-1, VPC-2) — tag `keep=true` thêm
-- [ ] RDS Read Replica — **KHÔNG tag `keep=true`** (con mồi MH-COST-A)
-- [ ] RDS Proxy AZ-1
-- [ ] ElastiCache AZ-1
+- [x] RDS Primary (AZ-1, VPC-2) — tag `keep=true` thêm
+- [x] RDS Read Replica — **KHÔNG tag `keep=true`** (con mồi MH-COST-A)
+- [x] RDS Proxy AZ-1 (RDS Proxy không thể tag được, đổi strategy sang: Tag Secrets Manager (tại RDS Proxy lấy Secrets Manager -> Access tới RDS) và IAM Role
+- [ ] ElastiCache AZ-1 (doesnt have)
 
 ---
 
@@ -62,11 +62,11 @@
 
 ## ⚙️ Operations & Backup
 
-- [ ] EventBridge — 1-minute cronjob trigger
-- [ ] EventBridge — End of session cronjob trigger
+- [x] EventBridge — 1-minute cronjob trigger
+- [x] EventBridge — End of session cronjob trigger
 - [ ] AWS Backup Vault — VPC-1
 - [ ] AWS Backup Vault — VPC-2
-- [ ] CloudWatch Dashboard
+- [ ] CloudWatch Dashboard (Doesnt see)
 
 ---
 
