@@ -146,4 +146,30 @@ _Log Analysis:_
 - **User Identity**: `assumed-role/Lambda-S3-SelfHealing-Role/SelfHealing`
 - **Conclusion**: The security operations robot has successfully completed the Near Real-Time healing cycle, fully satisfying the project requirements.
 
-# bonuses
+---
+
+### 5. Supporting Preventive Control (Path A: KMS CMK)
+
+To establish a defense-in-depth architecture, a proactive preventive control was implemented alongside the reactive S3 self-healing loop. The database layer (Amazon RDS) and its authentication layer (Secrets Manager via RDS Proxy) are encrypted using a Customer Managed Key (CMK).
+
+**CMK Configuration & Automatic Rotation**
+A dedicated symmetric KMS key (Alias: `xbrain-rds-prod`) was provisioned. To ensure long-term cryptographic hygiene, automatic key rotation is enabled (set to a 90-day period).
+![KMS Key Rotation](../assets/SPC1.png)
+
+**RDS At-Rest Encryption**
+The `w6-db` instance is strictly configured to use the `xbrain-rds-prod` CMK for primary storage encryption, moving away from default AWS-managed keys to maintain full administrative control over the encryption material. 
+![RDS Encryption Config](../assets/SPC2.png)
+
+**CloudTrail Validation of Active Cryptographic Usage**
+To prove the CMK is actively encrypting and decrypting data in production, CloudTrail logs capture the exact `GenerateDataKey` and `Decrypt` API calls. The logs verify that `rds.amazonaws.com` and the assumed role for the RDS Proxy (`rds-proxy-role`) are actively interacting with the KMS key to securely handle database storage and secrets decryption.
+
+*GenerateDataKey Event by RDS:*
+![GenerateDataKey Event](../assets/SPC3.png)
+
+*Decrypt Event by RDS Proxy:*
+![Decrypt Event](../assets/SPC4.png)
+
+---
+
+### 6. Risk Analysis & Cost Justification
+
