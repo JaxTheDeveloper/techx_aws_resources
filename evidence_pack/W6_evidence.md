@@ -51,14 +51,14 @@ All infrastructure is deployed via **Terraform**. We utilize the `default_tags` 
 
 We use **AWS Budget** to set up cost monitoring and alerts. Budget allows us to define spending thresholds and receive notifications when costs exceed these limits.
 
-We set the Period to Daily, so the budget is calculated daily. Make sure to choose Recurring budget so that everytime it's the first day of the month, the budget is reset.
+We set the Period to Daily, so the budget is calculated daily. Make sure to choose **Recurring budget** so that everytime it's the first day of the month, the budget is reset.
 
 ![Creating Budget](../assets/CreateBudget.png)
 
 In this case, we setup a budget of 150$ to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
 
-- When Actual cost > 66.66% ($99.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
-- When Actual cost > 99.99% ($149.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+- When **Actual cost > 66.66% ($99.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
+- When **Actual cost > 99.99% ($149.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
 
 ![Budget Image](../assets/BudgetDetail.png)
 ![Budget Image 2](../assets/BudgetDetail1.png)
