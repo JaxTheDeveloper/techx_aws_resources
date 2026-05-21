@@ -39,6 +39,17 @@ sudo rm -rf / --no-preserve-root
 
 
 # MH-OBS
+## CloudWatch Dashboard
+
+**Dashboard:** A CloudWatch dashboard was created with:
+- standard Lambda duration, errors widget
+- standard RDS DatabaseConnections widget
+- standard API Gateway 4XXError, 5XXError widget
+
+![CloudWatch dashboard showing Lambda errors, RDS connections, and API metrics](../assets/dashboard.png)
+
+**Observation:** Lambda errors are correlated with RDS connections and API traffic to identify performance issues quickly.
+
 ## CloudWatch Logs Insights Queries
 
 ### Query 1: Lambda Error Spikes by 5-Minute Window
