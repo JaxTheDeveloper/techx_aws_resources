@@ -25,15 +25,15 @@ resource "aws_subnet" "vpc2_az1_isolated" {
   }
 }
 
-# resource "aws_subnet" "vpc2_az2_isolated" {
-#   vpc_id            = aws_vpc.vpc2.id
-#   cidr_block        = var.vpc2_az2_isolated_cidr
-#   availability_zone = local.az_2
-#
-#   tags = {
-#     Name        = "${var.project_name}-vpc2-az2-isolated"
-#     Environment = var.environment
-#     Tier        = "Isolated-Private"
-#   }
-# }
+# Required for RDS DB Subnet Group (needs at least 2 AZs)
+resource "aws_subnet" "vpc2_az2_isolated" {
+  vpc_id            = aws_vpc.vpc2.id
+  cidr_block        = var.vpc2_az2_isolated_cidr
+  availability_zone = local.az_2
 
+  tags = {
+    Name        = "${var.project_name}-vpc2-az2-isolated"
+    Environment = var.environment
+    Tier        = "Isolated-Private"
+  }
+}
