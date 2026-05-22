@@ -135,13 +135,16 @@ This setup is used to invoke Lambda to start RDS instance
 Here is the IAM Role of EventBridge
 ![alt text](../assets/EventBridgeIAMRole.png)
 
-Before:
-
-After: 
+Event logs: 
+![alt text](../assets/stop_db_schedule.png)
 
 ## Component (d) — Cost-driven path
 Our work for this component follows this diagram below:
 ![alt text](../assets/CostAlertDiagram.png)
+
+Wire to SNS topic `BudgetAlerts_Topic`
+![alt text](../assets/alert_1.png)
+![alt text](../assets/alert_2.png)
 
 # MH-OBS
 
