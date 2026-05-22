@@ -100,54 +100,105 @@ Below is the dashboard of the cost anomaly detection. Which would also have anom
 ---
 # MH-COST-A
 
-## Component (a), (c) — Stop Lambda & Demonstrated action
-Before jumping into some testings, we need to take a look first: 
-1. RDS instance isn't tagged `keep=true`
-![RDS](../assets/rds.png) 
-2. Ensure **least-privilege** IAM role to the "Stop Lambda" 
+## Component (a), (c) — Stop/Start Lambda automation
+### Design intent
+The Lambda function implements a cost-control guardrail by stopping non-critical RDS instances during off hours. It is intentionally scoped to operate only on resources that are not tagged with `keep=true`, ensuring production-critical databases remain available.
+
+### Resource selection and safety
+Confirm the target RDS instance is not tagged `keep=true`
+   ![RDS](../assets/rds.png)
+
+### Least-privilege IAM role
+We attached a dedicated IAM role to the Lambda with minimal permissions. The policy allows only the required actions, such as `rds:StopDBInstance` and `rds:StartDBInstance`, and includes resource and condition restrictions.
+
+- **Least privilege**: only the actions required for lifecycle control
+- **Resource restriction**: limited to the exact RDS instance or matching project resources
+- **Condition-based control**: prevents the Lambda from affecting unrelated infrastructure
+
 ![Role](../assets/GuardLambdaRole.png)
 ![Policy](../assets/CostGuardPolicy.png)
 
-> Actions like `StopDBInstance` and `StartDBInstance` change the state of our infrastructure. We will restrict these using a **Condition block**, so the Lambda can only touch our specific project.
-git
----
-For this component's testing, we just invoke Lambda manually: \
-Before:
-![RDS before being stopped](../assets/rds_before.png)
-After: 
-![RDS after being stopped](../assets/rds_after.png)
-![RDS after being stopped](../assets/cloudtrail_comp_a.png) 
+> Stopping and starting RDS are state-changing operations. By enforcing a strict IAM role and tag conditions, we keep the cost automation safe and auditable.
 
-Done! 
+### Manual invocation test
+To validate the Lambda logic before enabling automation, we manually invoked the function and confirmed the expected state change.
 
-## Component (b) — Daily scheduled trigger
-Our work for this component follows this diagram below:
-![alt text](../assets/daily_schedule_diagram.png)
+- Before stop:
+  ![RDS before being stopped](../assets/rds_before.png)
+- After stop:
+  ![RDS after being stopped](../assets/rds_after.png)
+- CloudTrail evidence showing the Lambda execution event:
+  ![RDS after being stopped](../assets/cloudtrail_comp_a.png)
 
-Here is the **Scheduled Standard Rule using a Cron expression** used to trigger Lambda to stop RDS instance
-![alt text](../assets/CostGuardDailySchedule_stop.png)
-![alt text](../assets/CostGuardDailySchedule_stop_target.png)
+## Component (b) — Scheduled daily trigger
+### Architecture
+We implemented EventBridge scheduled rules to automatically stop and start RDS instances on a daily schedule. This reduces running costs during predictable idle periods while preserving data availability during business hours.
 
+### Stop schedule
+The EventBridge rule uses a Cron expression to invoke the Lambda stop flow at the scheduled off-hour time.
 
-This setup is used to invoke Lambda to start RDS instance
-![alt text](../assets/CostGuardDailySchedule_start.png)
-![alt text](../assets/CostGuardDailySchedule_start_target.png)
-Here is the IAM Role of EventBridge
-![alt text](../assets/EventBridgeIAMRole.png)
+Stop rule screenshot:
+  ![alt text](../assets/CostGuardDailySchedule_stop.png)
+  ![alt text](../assets/CostGuardDailySchedule_stop_target.png)
 
-Event logs in CloudTrail (Look at the time): 
-![alt text](../assets/stop_db_schedule.png)
-![alt text](../assets/start_db_schedule.png)
+### Start schedule
+A separate EventBridge rule invokes the Lambda start flow at the scheduled on-hour time.
 
-## Component (d) — Cost-driven path
-Our work for this component follows this diagram below:
-![alt text](../assets/CostAlertDiagram.png)
+Start rule screenshot:
+  ![alt text](../assets/CostGuardDailySchedule_start.png)
+  ![alt text](../assets/CostGuardDailySchedule_start_target.png)
+
+### EventBridge execution role
+EventBridge uses a dedicated IAM role to invoke the Lambda function securely.
+
+EventBridge role screenshot:
+  ![alt text](../assets/EventBridgeIAMRole.png)
+
+### Audit verification
+We verified the scheduled execution using CloudTrail & CloudWatch logs, confirming the stop and start events occurred at the expected times.
+
+Stop schedule event:
+  ![alt text](../assets/stop_db_schedule.png)
+  ![alt text](../assets/audit_stop.png)
+Start schedule event:
+  ![alt text](../assets/start_db_schedule.png)
+  ![alt text](../assets/image-2.png)
+
+## Component (d) — Cost-driven alert path
+### Design intent
+The cost-driven path connects budget alerts and SNS notifications to the automation pipeline. When AWS budget thresholds are breached, the system sends alerts to `BudgetAlerts_Topic`, enabling the operations team to respond quickly.
+
+### Event path
+- AWS Budget triggers a notification when spend approaches or exceeds thresholds
+- The notification is published to SNS topic `BudgetAlerts_Topic`
+- The alert path can be inspected and routed to downstream subscribers or additional automation
 
 Wire to SNS topic `BudgetAlerts_Topic`
 ![alt text](../assets/alert_1.png)
 ![alt text](../assets/alert_2.png)
-![alt text](../assets/lamda_sns_policy.png)
-![alt text](../assets/lambda_sns_policy_detailed.png)
+
+### Lambda SNS permission
+The Lambda is granted permissions to receive and process SNS notifications without broader access.
+
+SNS policy screenshot:
+  ![alt text](../assets/lamda_sns_policy.png)
+  ![alt text](../assets/lambda_sns_policy_detailed.png)
+
+### Verification logs
+We confirmed the alert delivery path by reviewing CloudTrail and log evidence for the budget alert and Lambda invocation events.
+
+Alert flow logs:
+  ![alt text](../assets/image.png)
+  ![alt text](../assets/image-4.png)
+  ![alt text](../assets/image-5.png)
+
+## Result and business value
+This cost automation demonstrates a safe and accountable way to reduce AWS spend by powering down idle RDS instances. The `keep=true` tag ensures protected workloads remain untouched, while scheduled rules and budget alerts add a second layer of automation and operational awareness.
+
+- Reduced idle RDS runtime costs
+- Protected production-critical instances with explicit tagging
+- Auditable state changes through CloudTrail
+- Clear operational alerts via SNS when budget thresholds are approached
 
 
 
