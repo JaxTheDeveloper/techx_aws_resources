@@ -127,16 +127,21 @@ Our work for this component follows this diagram below:
 Here is the **Scheduled Standard Rule using a Cron expression** used to trigger Lambda to stop RDS instance
 ![alt text](../assets/CostGuardDailySchedule_stop.png)
 ![alt text](../assets/CostGuardDailySchedule_stop_target.png)
-A quick breakdown of exactly what `45 11 * * ? *` is telling AWS to do:
-- `45`: The 45th minute of the hour
-- `06`: The 6th hour of the day (in GMT+7)
-- `*, *, ?, *`: Every day of the month, every month, regardless of the day of the week, every year 
 
-This means every day at precisely 11:45 AM UTC, EventBridge will reach out and execute the `Guard_Lambda` function
 
-The same for start triggering job
+This setup is used to invoke Lambda to start RDS instance
 ![alt text](../assets/CostGuardDailySchedule_start.png)
 ![alt text](../assets/CostGuardDailySchedule_start_target.png)
+Here is the IAM Role of EventBridge
+![alt text](../assets/EventBridgeIAMRole.png)
+
+Before:
+
+After: 
+
+## Component (d) — Cost-driven path
+Our work for this component follows this diagram below:
+![alt text](../assets/CostAlertDiagram.png)
 
 # MH-OBS
 
