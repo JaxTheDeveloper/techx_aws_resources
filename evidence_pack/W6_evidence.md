@@ -110,15 +110,19 @@ Done!
 Our work for this component follows this diagram below:
 ![alt text](../assets/daily_schedule_diagram.png)
 
-Here is the **Scheduled Standard Rule using a Cron expression**
-![alt text](../assets/CostGuardDailySchedule.png) 
-![alt text](../assets/CostGuardDailySchedule_target.png)
+Here is the **Scheduled Standard Rule using a Cron expression** used to trigger Lambda to stop RDS instance
+![alt text](../assets/CostGuardDailySchedule_stop.png)
+![alt text](../assets/CostGuardDailySchedule_stop_target.png)
 A quick breakdown of exactly what `45 11 * * ? *` is telling AWS to do:
 - `45`: The 45th minute of the hour
-- `11`: The 11th hour of the day (in UTC)
+- `06`: The 6th hour of the day (in GMT+7)
 - `*, *, ?, *`: Every day of the month, every month, regardless of the day of the week, every year 
 
 This means every day at precisely 11:45 AM UTC, EventBridge will reach out and execute the `Guard_Lambda` function
+
+The same for start triggering job
+![alt text](../assets/CostGuardDailySchedule_start.png)
+![alt text](../assets/CostGuardDailySchedule_start_target.png)
 
 # MH-OBS
 
