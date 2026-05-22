@@ -51,14 +51,28 @@ All infrastructure is deployed via **Terraform**. We utilize the `default_tags` 
 
 We use **AWS Budget** to set up cost monitoring and alerts. Budget allows us to define spending thresholds and receive notifications when costs exceed these limits.
 
-We set the Period to Daily, so the budget is calculated daily. Make sure to choose **Recurring budget** so that everytime it's the first day of the month, the budget is reset.
+We set the Period to Monthly, so the budget is calculated monthly. Make sure to choose **Recurring budget** so that everytime it's the first day of the month, the budget is reset.
 
 ![Creating Budget](../assets/CreateBudget.png)
 
-In this case, we setup a budget of 150$ to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
+For option "Aggregate costs by", we choose "Unblended costs". Since this is a workshop environment, we use unblended costs to get the most accurate cost monitoring.
 
-- When **Actual cost > 66.66% ($99.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
-- When **Actual cost > 99.99% ($149.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+| Metric Name | What It Does (The Alarm Math) | Good For |
+| :--- | :--- | :--- |
+| **`Unblended`** | Looks at your raw, un-discounted daily bill. | Standard accounts where you pay exactly for what you use by the hour. |
+| **`Amortized`** | Splits big upfront annual fees evenly over every single day. | Stopping "false alarm" alerts when a major subscription renews. |
+| **`Blended`** | Averages your costs with all other team accounts in a big company. | High-level corporate overviews across multiple departments. |
+| **`Net Unblended`** | Looks at your raw bill **after** subtracting free credits and coupons. | Tracking real out-of-pocket cash when using promo vouchers. |
+| **`Net Amortized`** | Splits upfront fees evenly **and** subtracts free credits simultaneously. | Production environments to see your absolute, final bottom-line cost. |
+
+![Creating Budget 2](../assets/CreateBudget1.png)
+
+In this case, we setup a budget of 150$ monthly to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
+
+- When **Forecasted cost > 66.66% ($99.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
+- When **Forecasted cost > 99.99% ($149.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+
+Forecasted cost means it will predict the cost for the this month based on historical usage. And it will compare this forecasted cost with the budget threshold to trigger alerts. Thus, it helps us to detect and respond to cost spikes or anomalies before they exceed the budget.
 
 ![Budget Image](../assets/BudgetDetail.png)
 ![Budget Image 2](../assets/BudgetDetail1.png)
