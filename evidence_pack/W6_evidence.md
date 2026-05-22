@@ -149,19 +149,7 @@ Wire to SNS topic `BudgetAlerts_Topic`
 ![alt text](../assets/lamda_sns_policy.png)
 ![alt text](../assets/lambda_sns_policy_detailed.png)
 
-# MH-OBS
 
-## CloudWatch Dashboard
-
-**Dashboard:** A CloudWatch dashboard was created with:
-
-- standard Lambda duration, errors widget
-- standard RDS DatabaseConnections widget
-- standard API Gateway 4XXError, 5XXError widget
-
-![CloudWatch dashboard showing Lambda errors, RDS connections, and API metrics](../assets/dashboard.png)
-
-**Observation:** Lambda errors are correlated with RDS connections and API traffic to identify performance issues quickly.
 
 # MH-OBS
 
@@ -169,9 +157,10 @@ Wire to SNS topic `BudgetAlerts_Topic`
 
 **Dashboard:** A CloudWatch dashboard was created with:
 
-- standard Lambda duration, errors widget
-- standard RDS DatabaseConnections widget
-- standard API Gateway 4XXError, 5XXError widget
+- Custom metric AssetReadLatency, DBWriteLatency, EndToEndIngestionLatency widget
+- Standard metric Lambda errors widget
+- Standard metric RDS DatabaseConnections widget
+- Standard metric API Gateway 4XXError, 5XXError widget
 
 ![CloudWatch dashboard showing Lambda errors, RDS connections, and API metrics](../assets/dashboard.png)
 
@@ -188,7 +177,7 @@ To gain deeper visibility into application-level performance beyond standard AWS
 - **Namespace:** `XBrain/AssetManagement`
 - **Metric Name:** `AssetReadLatency`
 - **Unit:** Milliseconds
-- **Dimension:** `Operation=ReadAsset`
+- **Dimension:** 
 
 **What it measures:** The duration from when the Lambda function initiates a database query until the data is fully retrieved and ready to be processed. This includes:
 - Database connection establishment time
@@ -213,7 +202,7 @@ To gain deeper visibility into application-level performance beyond standard AWS
 - **Namespace:** `XBrain/AssetManagement`
 - **Metric Name:** `DBWriteLatency`
 - **Unit:** Milliseconds
-- **Dimension:** `Operation=WriteAsset`
+- **Dimension:**
 
 **What it measures:** The complete database write cycle, including:
 - Database connection acquisition from the pool
@@ -247,7 +236,7 @@ To gain deeper visibility into application-level performance beyond standard AWS
 - **Namespace:** `XBrain/AssetManagement`
 - **Metric Name:** `EndToEndIngestionLatency`
 - **Unit:** Milliseconds
-- **Dimension:** `Operation=IngestAsset`
+- **Dimension:**
 
 **What it measures:** The complete request lifecycle, including:
 - API Gateway request routing time
