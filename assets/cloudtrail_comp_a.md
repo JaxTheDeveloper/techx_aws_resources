@@ -51,14 +51,14 @@ All infrastructure is deployed via **Terraform**. We utilize the `default_tags` 
 
 We use **AWS Budget** to set up cost monitoring and alerts. Budget allows us to define spending thresholds and receive notifications when costs exceed these limits.
 
-We set the Period to Daily, so the budget is calculated daily. Make sure to choose **Recurring budget** so that everytime it's the first day of the month, the budget is reset.
+We set the Period to Daily, so the budget is calculated daily. Make sure to choose Recurring budget so that everytime it's the first day of the month, the budget is reset.
 
 ![Creating Budget](../assets/CreateBudget.png)
 
 In this case, we setup a budget of 150$ to monitor our AWS costs. We also configured a notification alert to be sent when costs exceed the thresholds.
 
-- When **Actual cost > 66.66% ($99.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
-- When **Actual cost > 99.99% ($149.99) of the $150**, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
+- When Actual cost > 66.66% ($99.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the first warning threshold.
+- When Actual cost > 99.99% ($149.99) of the $150, it triggers a notification alert, which sent to the email address and also alerts the SNS (BudgetAlerts_Topic). This is the final warning threshold.
 
 ![Budget Image](../assets/BudgetDetail.png)
 ![Budget Image 2](../assets/BudgetDetail1.png)
@@ -84,30 +84,24 @@ Below is the dashboard of the cost anomaly detection. Which would also have anom
 ![Cost Anomaly](../assets/costAnomaly.png)
 
 ---
+
 # MH-COST-A
+### Component (a) — Stop Lambda
+Before jumping into some experiments for this must-have requirements, we need to take a look first:
+1. RDS isn't tagged `keep=true`  
+![alt text](../assets/rds.png)
+2. A least-privilege IAM policy for the "Stop Lambda" - `Guard_Lambda` 
+![alt text](../assets/GuardLambdaRole.png)
+![alt text](../assets/CostGuardPolicy.png)
 
-## Component (a), (c) — Stop Lambda & Demonstrated action
-Before jumping into some testings, we need to take a look first: 
-1. RDS instance isn't tagged `keep=true`
-![RDS](../assets/rds.png) 
-2. Ensure **least-privilege** IAM role to the "Stop Lambda" 
-![Role](../assets/GuardLambdaRole.png)
-![Policy](../assets/CostGuardPolicy.png)
-
-> Actions like `StopDBInstance` and `StartDBInstance` change the state of our infrastructure. We will restrict these using a **Condition block**, so the Lambda can only touch our specific project.
-
+> Actions like **StopDBInstance** and **StartDBInstance** change the state of our infrastructure. We will restrict these using a **Condition block**, so the Lambda can only touch our specific project. 
 ---
-For this component's testing, we just invoke Lambda manually: \
-Before:
-![RDS before being stopped](../assets/rds_before.png)
+For this component's testing, we invoke Lambda manually: \
+Before: 
+![alt text](../assets/rds_before.png)
 After: 
-![RDS after being stopped](../assets/rds_after.png)
-![RDS after being stopped](../assets/cloudtrail_comp_a.png) 
-
-Done! 
-
-## Component (b) — Daily scheduled trigger
-![alt text](image.png)
+![alt text](../assets/rds_after.png)
+![alt text](../assets/cloudtrail_comp_a.png)
 
 # MH-OBS
 
