@@ -160,6 +160,169 @@ Wire to SNS topic `BudgetAlerts_Topic`
 
 **Observation:** Lambda errors are correlated with RDS connections and API traffic to identify performance issues quickly.
 
+# MH-OBS
+
+## CloudWatch Dashboard
+
+**Dashboard:** A CloudWatch dashboard was created with:
+
+- standard Lambda duration, errors widget
+- standard RDS DatabaseConnections widget
+- standard API Gateway 4XXError, 5XXError widget
+
+![CloudWatch dashboard showing Lambda errors, RDS connections, and API metrics](../assets/dashboard.png)
+
+**Observation:** Lambda errors are correlated with RDS connections and API traffic to identify performance issues quickly.
+### Custom Metrics: Application Performance Monitoring
+
+To gain deeper visibility into application-level performance beyond standard AWS infrastructure metrics, we implemented three custom CloudWatch metrics that track the complete data flow journey:
+
+#### 1. AssetReadLatency — Database Read Performance
+
+**Purpose:** Measures the time taken to read data from the database and return it to the application layer.
+
+**Metric Details:**
+- **Namespace:** `XBrain/AssetManagement`
+- **Metric Name:** `AssetReadLatency`
+- **Unit:** Milliseconds
+- **Dimension:** `Operation=ReadAsset`
+
+**What it measures:** The duration from when the Lambda function initiates a database query until the data is fully retrieved and ready to be processed. This includes:
+- Database connection establishment time
+- Query execution time
+- Data retrieval and serialization time
+
+![AssetReadLatency metric showing database read performance over time](../assets/AcessReadLatency.jpg)
+
+**Observation:** This metric helps identify database performance bottlenecks. Spikes in read latency may indicate:
+- Database connection pool exhaustion
+- Slow queries requiring optimization
+- Network latency between Lambda and RDS
+- Database resource contention (CPU/Memory/IOPS)
+
+---
+
+#### 2. DBWriteLatency — Database Write Performance
+
+**Purpose:** Measures the time taken for Lambda to connect to the database and complete a write operation — from the moment the write begins until it is fully committed.
+
+**Metric Details:**
+- **Namespace:** `XBrain/AssetManagement`
+- **Metric Name:** `DBWriteLatency`
+- **Unit:** Milliseconds
+- **Dimension:** `Operation=WriteAsset`
+
+**What it measures:** The complete database write cycle, including:
+- Database connection acquisition from the pool
+- Transaction initiation
+- Data validation and transformation
+- Write operation execution (INSERT/UPDATE)
+- Transaction commit and acknowledgment
+
+![DBWriteLatency metric showing database write performance over time](../assets/DBWriteLatency.jpg)
+
+**Observation:** This metric is critical for understanding write performance and data persistence reliability. High write latency may indicate:
+- Database write throughput limits (IOPS exhaustion)
+- Lock contention on database tables
+- Large transaction sizes requiring optimization
+- Network latency or connection pool issues
+
+**Typical Baseline:**
+- **Good:** < 50ms for simple writes
+- **Acceptable:** 50-200ms for complex transactions
+- **Investigate:** > 200ms consistently
+
+
+
+---
+
+#### 3. EndToEndIngestionLatency — Complete Request Journey
+
+**Purpose:** Measures the total end-to-end latency from when the client sends a POST request until Lambda processes it completely and returns a response.
+
+**Metric Details:**
+- **Namespace:** `XBrain/AssetManagement`
+- **Metric Name:** `EndToEndIngestionLatency`
+- **Unit:** Milliseconds
+- **Dimension:** `Operation=IngestAsset`
+
+**What it measures:** The complete request lifecycle, including:
+- API Gateway request routing time
+- Lambda cold start (if applicable)
+- Request payload parsing and validation
+- Business logic execution
+- Database write operation (DBWriteLatency above)
+- Response serialization
+- API Gateway response delivery
+
+**Relationship to other metrics:**
+```
+EndToEndIngestionLatency = 
+    API Gateway Latency +
+    Lambda Initialization (cold start) +
+    Request Processing +
+    DBWriteLatency +
+    Response Generation
+```
+
+**Observation:** This is the most important metric from a user experience perspective, as it represents what the end user actually experiences. By comparing this metric with DBWriteLatency, we can identify where time is being spent:
+
+- If `EndToEndIngestionLatency ≈ DBWriteLatency`: Database is the bottleneck
+- If `EndToEndIngestionLatency >> DBWriteLatency`: Overhead in API Gateway, Lambda cold starts, or application logic
+
+**Typical Baseline:**
+- **Excellent:** < 100ms (warm Lambda, simple write)
+- **Good:** 100-500ms (warm Lambda, complex write)
+- **Acceptable:** 500-1000ms (cold start included)
+- **Investigate:** > 1000ms consistently
+
+---
+
+### Custom Metrics Dashboard Integration
+
+These three custom metrics are integrated into the CloudWatch dashboard alongside standard infrastructure metrics, providing a complete view of system health:
+
+**Dashboard Layout:**
+```
+┌─────────────────────────────────────────────────────────┐
+│              Application Performance Dashboard          │
+├─────────────────────────────────────────────────────────┤
+│  Lambda Errors        │  Lambda Duration                │
+│  (Standard)           │  (Standard)                     │
+├─────────────────────────────────────────────────────────┤
+│  RDS DatabaseConnections                                │
+│  (Standard)                                             │
+├─────────────────────────────────────────────────────────┤
+│  API Gateway 4XX      │  API Gateway 5XX                │
+│  (Standard)           │  (Standard)                     │
+├─────────────────────────────────────────────────────────┤
+│  AssetReadLatency     │  DBWriteLatency                 │
+│  (Custom)             │  (Custom)                       │
+├─────────────────────────────────────────────────────────┤
+│  EndToEndIngestionLatency                               │
+│  (Custom)                                               │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Correlation Analysis:**
+By monitoring these metrics together, we can quickly identify the root cause of performance issues:
+
+1. **High EndToEndIngestionLatency + Normal DBWriteLatency**
+   → Issue: Lambda cold starts, API Gateway latency, or application logic
+   → Action: Optimize Lambda memory, implement provisioned concurrency, or refactor code
+
+2. **High DBWriteLatency + High RDS DatabaseConnections**
+   → Issue: Database connection pool exhaustion or resource contention
+   → Action: Increase connection pool size, optimize queries, or scale RDS
+
+3. **High AssetReadLatency + Normal RDS CPU**
+   → Issue: Slow queries or missing database indexes
+   → Action: Analyze query execution plans, add indexes, or optimize queries
+
+4. **Spikes in all custom metrics + API Gateway 5XX errors**
+   → Issue: System-wide performance degradation or outage
+   → Action: Check RDS health, Lambda throttling, or network issues
+
 ## CloudWatch Alarm
 
 ![CloudWatch alarm in ALARM state](../assets/alarm.png)
