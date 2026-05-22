@@ -109,7 +109,7 @@ Before jumping into some testings, we need to take a look first:
 ![Policy](../assets/CostGuardPolicy.png)
 
 > Actions like `StopDBInstance` and `StartDBInstance` change the state of our infrastructure. We will restrict these using a **Condition block**, so the Lambda can only touch our specific project.
-
+git
 ---
 For this component's testing, we just invoke Lambda manually: \
 Before:
