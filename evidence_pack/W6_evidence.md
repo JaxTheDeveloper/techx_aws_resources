@@ -315,4 +315,19 @@ _Decrypt Event by RDS Proxy:_
 
 Deploying the S3 automated remediation loop via EventBridge and Lambda incurs near-zero cost thanks to the serverless model, whereas maintaining a dedicated KMS Customer Managed Key (CMK) incurs a fixed fee of $1/month plus API call fees. This investment is entirely justified and safely within the $150 budget limit because the CMK enables automatic key rotation and generates a transparent audit trail on CloudTrail for every database-tier data decryption operation, meeting strict compliance standards that default AWS-managed keys cannot achieve.
 
-# bonuses
+# Bonuses
+## Composite CloudWatch Alarm
+
+**Objective:** Reduce "Alarm Fatigue" by ensuring the operations team is only notified during a correlated system degradation, rather than isolated metric spikes.
+
+**Implementation & Evidence:**
+We combined two individual metric alarms using strict `AND` logic. The notification action (SNS) is only configured on the Composite Alarm, while the child alarms remain silent to prevent alert spam.
+
+* **CloudWatch Console:** The Composite Alarm successfully transitioned to the `In alarm` state because both child metric alarms (`DBWriteLatencyComponentAlarm` AND `AssetReadComponentAlarm`) breached their thresholds simultaneously.
+* **Alert Delivery:** The SNS email notification proves the alert was successfully delivered to the team. The payload explicitly shows the Alarm Rule evaluating the `AND` condition: `ALARM("DBWriteLatencyComponentAlarm") AND ALARM("AssetReadComponentAlarm")`.
+
+*Fig 1: Composite Alarm tracking child alarm states in the AWS Console.*
+![Composite Alarm in CloudWatch Console](../assets/Bonus_CP1.png)
+
+*Fig 2: Email notification triggered by the Composite Alarm.*
+![SNS Email Notification](../assets/Bonus_CP2.png)
