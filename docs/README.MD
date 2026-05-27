@@ -1,1 +1,0 @@
-this folder is dedicated for the storage and review of architectural desicisions and deployment parameters made for each AWS components. this is done to facilitate mutual understanding of the subject matter across team members.
