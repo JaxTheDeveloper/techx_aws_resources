@@ -131,16 +131,16 @@ Created CloudWatch alarms to proactively monitor DocHub system health. All alarm
 ### Alarm 1: Lambda Backend Errors
 
 **Alarm Configuration:**
+- **Alarm Name:** dochub-backend-errors
 - **Namespace:** AWS/Lambda
-- **Function:** dochub-backend
-- **Metric:** Errors (standard Lambda metric)
+- **Metric:** Errors
 - **Statistic:** Sum
 - **Period:** 5 minutes
-- **Threshold:** Errors >= 1
-- **Evaluation:** 1 out of 1 datapoints
-- **Missing data treatment:** Treat missing data as good (not breaching)
-- **State:** OK/ALARM (depending on error occurrence)
-- **Action:** SNS email notification to ops team
+- **Threshold:** > 1 error
+- **Evaluation:** 1 out of 1 datapoints to alarm
+- **Missing data treatment:** Treat missing data as not breaching (good)
+- **State:** ALARM (when errors detected) / OK (no errors)
+- **Action:** SNS notification to dochub-alarm-topic
 
 **SNS Email Notification:**
 
@@ -149,45 +149,44 @@ Created CloudWatch alarms to proactively monitor DocHub system health. All alarm
 ![Alarm Email Notification 2](../assets/Alarm2.jpeg)
 
 **Rationale:**
-- **Why Errors metric:** dochub-backend is the main compute layer handling document upload, list, and query operations. Any Lambda error directly impacts user experience and needs immediate detection.
-- **Why not Invocations:** Errors metric reflects actual failures, not just call volume. This provides actionable alerts rather than noise.
-- **Threshold choice:** Errors >= 1 in 5 minutes means any single error triggers ALARM state, ensuring rapid response to backend failures.
-- **Missing data handling:** Configured as "not breaching" to avoid INSUFFICIENT_DATA during low-traffic demo periods, ensuring alarm stays in OK or ALARM state as required by W7.
+- **Why Errors metric:** Monitors the dochub-backend Lambda function for any runtime errors. Any error indicates a failure in document processing operations.
+- **Threshold choice:** >= 1 error in 5 minutes ensures immediate detection of any backend failure.
+- **Missing data handling:** Configured as "not breaching" to keep alarm in OK state during periods with no Lambda invocations, avoiding INSUFFICIENT_DATA.
 
 **Evidence:**
-- Alarm successfully sends email notifications when triggered
-- Alarm actively monitors real traffic (not INSUFFICIENT_DATA state)
-- SNS topic subscription confirmed and working
-- Alarm transitions between OK and ALARM states based on actual Lambda errors
+- Alarm successfully transitions to ALARM state when Lambda errors occur
+- SNS email notifications delivered to team
+- Alarm stays in OK/ALARM state (never INSUFFICIENT_DATA)
 
 ---
 
 ### Alarm 2: High Query Latency
 
 **Alarm Configuration:**
+- **Alarm Name:** dochub-high-query-latency
 - **Namespace:** DocHub/Application
 - **Metric:** QueryLatencyMs (custom metric)
-- **Statistic:** Average
+- **Statistic:** Maximum
 - **Period:** 5 minutes
-- **Threshold:** QueryLatencyMs > 5000ms (5 seconds)
-- **Evaluation:** 2 out of 2 datapoints
-- **Missing data treatment:** Treat missing data as good (not breaching)
-- **State:** OK/ALARM (depending on query performance)
-- **Action:** SNS email notification to ops team
+- **Threshold:** > 10000ms (10 seconds)
+- **Evaluation:** 1 out of 1 consecutive datapoints to alarm
+- **Missing data treatment:** Treat missing data as not breaching (good)
+- **State:** ALARM (when latency exceeds threshold) / OK (normal latency)
+- **Action:** SNS notification to dochub-alarm-topic
 
 **SNS Email Notification:**
 
 ![Alarm Email Notification - Query Latency](../assets/AlarmQueryLatencyMs.jpeg)
 
 **Rationale:**
-- **Why QueryLatencyMs:** This custom metric tracks end-to-end query performance including vector search and LLM response generation. Slow queries directly impact user experience.
-- **Threshold choice:** 5 seconds is the acceptable upper limit for query response time. Beyond this, users perceive the system as slow.
+- **Why QueryLatencyMs:** This custom metric tracks end-to-end query performance including vector search and LLM response. Slow queries directly impact user experience.
+- **Threshold choice:** 5000ms (5 seconds) is the acceptable upper limit. Beyond this, users perceive the system as unresponsive.
 - **Evaluation period:** 2 consecutive datapoints (10 minutes total) prevents false alarms from isolated slow queries while catching sustained performance degradation.
-- **Missing data handling:** Configured as "not breaching" to maintain OK/ALARM state during low query volume periods.
+- **Missing data handling:** Configured as "not breaching" to maintain OK state during low query volume, avoiding INSUFFICIENT_DATA.
 
 **Evidence:**
 - Alarm monitors custom application metric (demonstrates PutMetricData implementation)
-- Provides early warning of RAG pipeline performance issues
+- Provides early warning of RAG pipeline performance degradation
 - Helps identify when vector search or LLM invocation becomes bottleneck
 
 ---
