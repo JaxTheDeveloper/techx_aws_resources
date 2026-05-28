@@ -1,58 +1,126 @@
-## CloudWatch Dashboard with Custom Application Metric
+## CloudWatch Dashboard with Custom Application Metrics
 
 ### Dashboard Overview
 
 Created a comprehensive CloudWatch dashboard to monitor DocHub's key performance indicators and system health.
 
-![CloudWatch Dashboard Overview](../assets/Dashboard.jpeg)
+![CloudWatch Dashboard Overview](../assets/DashBoard.jpeg)
 
 **Dashboard Components:**
-- Custom application metric: DocumentUploadToS3LatencyMs
-- Standard AWS metric: Lambda errors from API Gateway
+- **Custom application metrics:** VectorSearchLatencyMs, QueryLatencyMs
+- **Standard AWS metrics:** Lambda Errors, API Gateway 4XX/5XX errors
 - Real-time monitoring of document processing pipeline
 
 ---
 
-### Custom Application Metric: DocumentUploadToS3LatencyMs
+### VPC Configuration for CloudWatch Access
 
-**Metric Type:** Custom Application Metric (PutMetricData)
+![VPC Configuration](../assets/vpc.png)
 
-**Purpose:** Measures the end-to-end latency for document upload operations in the DocHub backend, from when a user initiates an upload to when the document is successfully stored in S3.
+**Purpose:** VPC configuration enabling Lambda functions in private subnets to send metrics and logs to CloudWatch without requiring internet access.
 
-**Why This is a Custom Metric:**
-- This is NOT a default Lambda or S3 metric
-- It reflects business-level latency specific to DocHub's document upload workflow
-- Captures the complete user-facing operation time, not just individual service metrics
-- Implemented using CloudWatch PutMetricData API in the backend code
+**Why This Matters:**
+- Lambda functions running in private subnets (for security) cannot directly access CloudWatch without network connectivity
+- **VPC Endpoints** provide private connectivity to CloudWatch services without traversing the public internet
+- Enables secure metric publishing (PutMetricData) and log streaming from isolated Lambda functions
 
-![Document Upload Latency Metric](../assets/QuerryLatencyMs.jpeg)
+**Configuration:**
+- **VPC Endpoints:** Interface endpoints for CloudWatch Logs and CloudWatch Monitoring
+- **Security Groups:** Allow outbound HTTPS (443) to VPC endpoints
+- **Route Tables:** Private subnet routes traffic to VPC endpoints instead of NAT Gateway
 
-**Metric Details:**
-- **Namespace:** DocHub/Application
-- **Metric Name:** DocumentUploadToS3LatencyMs
-- **Unit:** Milliseconds
-- **Dimensions:** Environment=production, Operation=DocumentUpload
-
-**Observed Performance:**
-- Average latency: ~800ms for typical document uploads
-- P95 latency: ~1200ms
-- Helps identify slow uploads that may need optimization
+**Cost & Security Benefits:**
+- Eliminates need for NAT Gateway ($1.08/day saved)
+- Keeps observability traffic within AWS private network
+- Reduces data transfer costs
+- Maintains Lambda security posture (no internet access required)
 
 ---
 
-### Standard Metric: Lambda Errors
+### Custom Application Metric 1: VectorSearchLatencyMs
 
-**Metric Type:** Standard AWS Metric (API Gateway)
+**Metric Type:** Custom Application Metric (PutMetricData)
 
-**Purpose:** Tracks error count from API Gateway to monitor system reliability.
+**Purpose:** Measures the latency of vector similarity search operations when querying documents in the DocHub knowledge base.
 
-![Lambda Error Count](../assets/LambdaError.jpeg)
+**Why This is a Custom Metric:**
+- This is NOT a default Bedrock or Lambda metric
+- It reflects the specific vector search operation latency in DocHub's RAG pipeline
+- Captures the time taken to retrieve relevant document chunks from the vector database
+- Implemented using CloudWatch PutMetricData API in the backend code
+
+![Vector Search Latency Metric](../assets/VectorSearchLatencyMs.jpeg)
 
 **Metric Details:**
-- **Source:** API Gateway
-- **Metric Name:** 4XXError, 5XXError
-- **Purpose:** Monitor API reliability and catch backend failures
-- **Threshold:** Alert when error rate exceeds 5% of total requests
+- **Namespace:** DocHub/Application
+- **Metric Name:** VectorSearchLatencyMs
+- **Unit:** Milliseconds
+- **Dimensions:** Environment=production, Operation=VectorSearch
+
+**Observed Performance:**
+- Average latency: ~300ms for typical vector searches
+- P95 latency: ~500ms
+- Critical for RAG query performance
+
+---
+
+### Custom Application Metric 2: QueryLatencyMs
+
+**Metric Type:** Custom Application Metric (PutMetricData)
+
+**Purpose:** Measures the end-to-end latency for document query operations, from when a user submits a question to when the AI response is generated.
+
+**Why This is a Custom Metric:**
+- This is NOT a default Lambda or Bedrock metric
+- It reflects business-level latency specific to DocHub's query workflow
+- Captures the complete user-facing operation time including vector search, LLM invocation, and response formatting
+- Implemented using CloudWatch PutMetricData API in the backend code
+
+![Query Latency Metric](../assets/QuerryLatencyMs.jpeg)
+
+**Metric Details:**
+- **Namespace:** DocHub/Application
+- **Metric Name:** QueryLatencyMs
+- **Unit:** Milliseconds
+- **Dimensions:** Environment=production, Operation=Query
+
+**Observed Performance:**
+- Average latency: ~2000ms for typical queries
+- P95 latency: ~3500ms
+- Helps identify slow queries that may need optimization
+
+---
+
+### Standard Metric 1: Lambda Errors
+
+**Metric Type:** Standard AWS Metric (AWS/Lambda)
+
+**Purpose:** Tracks Lambda function errors to monitor backend reliability.
+
+![Lambda Error Count](../assets/Error.jpeg)
+
+**Metric Details:**
+- **Namespace:** AWS/Lambda
+- **Function:** dochub-backend
+- **Metric Name:** Errors
+- **Purpose:** Monitor Lambda runtime errors and failures
+- **Usage:** Displayed on dashboard and used for alarm configuration
+
+---
+
+### Standard Metric 2: API Gateway Errors
+
+**Metric Type:** Standard AWS Metric (AWS/ApiGateway)
+
+**Purpose:** Tracks API Gateway 4XX and 5XX errors to monitor API reliability.
+
+![API Gateway Errors](../assets/ApigatewayEr.jpeg)
+
+**Metric Details:**
+- **Namespace:** AWS/ApiGateway
+- **Metric Names:** 4XXError, 5XXError
+- **Purpose:** Monitor API-level errors (client errors and server errors)
+- **Usage:** Displayed on dashboard to track overall API health
 
 ---
 
@@ -60,7 +128,7 @@ Created a comprehensive CloudWatch dashboard to monitor DocHub's key performance
 
 Created CloudWatch alarms to proactively monitor DocHub system health. All alarms are in **OK or ALARM state** (not INSUFFICIENT_DATA), demonstrating active monitoring with real traffic. Alarms are configured to send SNS email notifications when triggered.
 
-### Alarm: Lambda Backend Errors
+### Alarm 1: Lambda Backend Errors
 
 **Alarm Configuration:**
 - **Namespace:** AWS/Lambda
@@ -91,6 +159,36 @@ Created CloudWatch alarms to proactively monitor DocHub system health. All alarm
 - Alarm actively monitors real traffic (not INSUFFICIENT_DATA state)
 - SNS topic subscription confirmed and working
 - Alarm transitions between OK and ALARM states based on actual Lambda errors
+
+---
+
+### Alarm 2: High Query Latency
+
+**Alarm Configuration:**
+- **Namespace:** DocHub/Application
+- **Metric:** QueryLatencyMs (custom metric)
+- **Statistic:** Average
+- **Period:** 5 minutes
+- **Threshold:** QueryLatencyMs > 5000ms (5 seconds)
+- **Evaluation:** 2 out of 2 datapoints
+- **Missing data treatment:** Treat missing data as good (not breaching)
+- **State:** OK/ALARM (depending on query performance)
+- **Action:** SNS email notification to ops team
+
+**SNS Email Notification:**
+
+![Alarm Email Notification - Query Latency](../assets/AlarmQueryLatencyMs.jpeg)
+
+**Rationale:**
+- **Why QueryLatencyMs:** This custom metric tracks end-to-end query performance including vector search and LLM response generation. Slow queries directly impact user experience.
+- **Threshold choice:** 5 seconds is the acceptable upper limit for query response time. Beyond this, users perceive the system as slow.
+- **Evaluation period:** 2 consecutive datapoints (10 minutes total) prevents false alarms from isolated slow queries while catching sustained performance degradation.
+- **Missing data handling:** Configured as "not breaching" to maintain OK/ALARM state during low query volume periods.
+
+**Evidence:**
+- Alarm monitors custom application metric (demonstrates PutMetricData implementation)
+- Provides early warning of RAG pipeline performance issues
+- Helps identify when vector search or LLM invocation becomes bottleneck
 
 ---
 
