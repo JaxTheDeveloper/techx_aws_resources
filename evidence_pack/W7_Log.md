@@ -60,51 +60,37 @@ Created a comprehensive CloudWatch dashboard to monitor DocHub's key performance
 
 Created CloudWatch alarms to proactively monitor DocHub system health. All alarms are in **OK or ALARM state** (not INSUFFICIENT_DATA), demonstrating active monitoring with real traffic. Alarms are configured to send SNS email notifications when triggered.
 
-### Alarm: High Document Upload Latency
+### Alarm: Lambda Backend Errors
 
 **Alarm Configuration:**
-- **Metric:** DocumentUploadToS3LatencyMs (custom metric)
-- **Threshold:** > 2000ms (2 seconds)
-- **Evaluation Period:** 2 consecutive periods of 1 minute
-- **State:** OK (latency within acceptable range)
+- **Namespace:** AWS/Lambda
+- **Function:** dochub-backend
+- **Metric:** Errors (standard Lambda metric)
+- **Statistic:** Sum
+- **Period:** 5 minutes
+- **Threshold:** Errors >= 1
+- **Evaluation:** 1 out of 1 datapoints
+- **Missing data treatment:** Treat missing data as good (not breaching)
+- **State:** OK/ALARM (depending on error occurrence)
 - **Action:** SNS email notification to ops team
 
 **SNS Email Notification:**
 
 ![Alarm Email Notification 1](../assets/Alarm1.jpeg)
 
-**Rationale:**
-- Document uploads taking >2 seconds indicate potential issues (S3 upload bottleneck, large file size, network issues)
-- Email notification ensures team is immediately aware of performance degradation
-- Early warning system before users complain
-
----
-
-### Alarm: Lambda Error Rate Spike
-
-**Alarm Configuration:**
-- **Metric:** Lambda Errors (from API Gateway)
-- **Threshold:** > 5 errors in 5 minutes
-- **Evaluation Period:** 1 period of 5 minutes
-- **State:** ALARM (detected error spike during testing)
-- **Action:** SNS email notification to ops team
-
-**SNS Email Notification:**
-
 ![Alarm Email Notification 2](../assets/Alarm2.jpeg)
 
 **Rationale:**
-- Catches backend failures immediately via email alert
-- Distinguishes between isolated errors vs systemic issues
-- Alarm successfully triggered during load testing, validating monitoring works correctly
-
-**Configuration Insight:**
-This alarm monitors Lambda Errors on the dochub-backend function (main backend for document upload/query). Any runtime error within 5 minutes triggers ALARM state and sends email notification. Missing data is configured as "not breaching" to avoid INSUFFICIENT_DATA during low-traffic demo periods.
+- **Why Errors metric:** dochub-backend is the main compute layer handling document upload, list, and query operations. Any Lambda error directly impacts user experience and needs immediate detection.
+- **Why not Invocations:** Errors metric reflects actual failures, not just call volume. This provides actionable alerts rather than noise.
+- **Threshold choice:** Errors >= 1 in 5 minutes means any single error triggers ALARM state, ensuring rapid response to backend failures.
+- **Missing data handling:** Configured as "not breaching" to avoid INSUFFICIENT_DATA during low-traffic demo periods, ensuring alarm stays in OK or ALARM state as required by W7.
 
 **Evidence:**
-- Both alarms successfully send email notifications when triggered
-- Alarms are actively monitoring real traffic (not INSUFFICIENT_DATA state)
-- SNS topic subscriptions confirmed and working
+- Alarm successfully sends email notifications when triggered
+- Alarm actively monitors real traffic (not INSUFFICIENT_DATA state)
+- SNS topic subscription confirmed and working
+- Alarm transitions between OK and ALARM states based on actual Lambda errors
 
 ---
 
@@ -130,9 +116,11 @@ fields @timestamp, @message, latency_ms, document_size, user_id
 3. Counts number of uploads per window
 4. Sorts by timestamp (most recent first)
 
+**Why This Query Matters:**
+Enables rapid troubleshooting by aggregating upload performance into 5-minute windows. Tracking both average and max latency alongside upload count helps distinguish systemic slowdowns (high average) from isolated slow uploads (high max, normal average).
+
 **Use Cases:**
-- Identify time periods with slow uploads
-- Correlate upload volume with latency spikes
+- Identify time periods with slow uploads and correlate with upload volume
 - Troubleshoot user-reported performance issues
 - Capacity planning based on upload patterns
 
