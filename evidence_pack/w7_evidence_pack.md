@@ -1,58 +1,56 @@
 # W7 Capstone Evidence Pack: AI Document Hub (DocHub)
 
 ## 1. Cover
-* **Group:** G[Group Number] - [Group Name][cite: 4]
-* **Members:** [Member 1 Name], [Member 2 Name], [Member 3 Name][cite: 4]
-* **Live URL (HTTPS):** `https://[id].cloudfront.net`[cite: 4]
-* **GitHub Repo:** `https://github.com/[username]/[repo]`[cite: 4]
-* **Domain:** C - ProductivityTech ("AI Document Hub")[cite: 3, 4]
-* **Total Spend:** `$[Amount, e.g., 1.77]` (Eligible for Bonus Path H)[cite: 1, 3]
-* **Bonus Paths Claimed:** H (spend < $30 + clean teardown) · C (Custom domain `https://docs4hub.tech` + HTTPS via ACM)
+* **Group:** Group 1
+* **Members:** Phan Thị Thủy Hiền, Hoàng Nhật Thành, Nguyễn Qúy Hưng, Nguyễn Hoàng Huy, Phạm Tùng Dương, Nguyễn Quang Phong, Trần Đình Minh Quân, Phan Nguyên Đạt, Võ Đức Vũ
+* **Live URL (HTTPS):** `https://docs4hub.tech`
+* **GitHub Repo:** `https://github.com/JaxTheDeveloper/techx_aws_resources/tree/week-7-capstone#`
+* **Total Spend:** `$0.47`
 
 ---
 
 ## 2. Pitch & Vision
-AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance teams manage, search, and cross-query thousands of contracts and policy documents[cite: 4].
+AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance teams manage, search, and cross-query thousands of contracts and policy documents.
 
 * **The Problem:** Legal teams spend too much time searching for specific clauses scattered across dozens of different contract versions.
 * **The AI Solution:** Automating information extraction and summarization based on strictly isolated tenant access rights.
-* **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract)[cite: 4].
+* **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
 
 ---
 
 ## 3. Architecture & Service Decisions
 
-![Final Architecture Diagram](../docs/architecture.png)
-*(Note: Ensure your architecture image is saved at `docs/architecture.png`)*[cite: 4]
+![Final Architecture Diagram](../assets/architecture.jpg)
+
 
 Our system fulfills all 7 Mandatory Capabilities[cite: 4]:
 
 | Mandatory Capability | Chosen Service | Rationale |
 | :--- | :--- | :--- |
-| **1. User Interface** | CloudFront + S3 Static | Provides a free public HTTPS URL, easy to deploy static frontend[cite: 4]. |
-| **2. App Compute** | API Gateway HTTP + Lambda | HTTP API is cheaper than REST API; Lambda has no idle cost and scales per request[cite: 4]. |
-| **3. AI / ML** | Bedrock Agent + KB (Haiku) | Agent allows calling a Lambda tool to filter documents by `tenant_id` before querying the Knowledge Base[cite: 4]. |
-| **4. Data Persistence** | DynamoDB (On-demand) | Stores document metadata (PK=`tenant_id`, SK=`doc_id`). Optimizes cost and speed for key-value queries[cite: 4]. |
-| **5. Object Storage** | S3 Bucket (Multi-tenant prefix) | Stores original PDF files with a `tenant_id/` prefix, Block Public Access enabled[cite: 4]. |
-| **6. Network** | VPC + Gateway/Interface Endpoints | Isolates DB (not public-facing); uses Endpoints to call AWS services without NAT Gateway costs[cite: 4]. |
-| **7. Identity** | Cognito + IAM Least-privilege | IAM role only grants Read/Write to specific buckets/tables. Cognito issues JWTs to isolate tenants[cite: 4]. |
+| **1. User Interface** | CloudFront + S3 Static | Provides a free public HTTPS URL, easy to deploy static frontend. |
+| **2. App Compute** | API Gateway HTTP + Lambda | HTTP API is cheaper than REST API; Lambda has no idle cost and scales per request. |
+| **3. AI / ML** | Bedrock Agent + KB (Haiku) | Agent allows calling a Lambda tool to filter documents by `tenant_id` before querying the Knowledge Base. |
+| **4. Data Persistence** | DynamoDB (On-demand) | Stores document metadata (PK=`tenant_id`, SK=`sk`(docs_id)). Optimizes cost and speed for key-value queries. |
+| **5. Object Storage** | S3 Bucket (Multi-tenant prefix) | Stores original document files with a `tenant_id/` prefix, Block Public Access enabled. |
+| **6. Network** | VPC + VPC Endpoints | Isolates DB (not public-facing); uses Endpoints to call AWS services without NAT Gateway costs. |
+| **7. Identity** | Cognito + IAM Least-privilege | IAM role only grants Read/Write to specific buckets/tables. Cognito issues JWTs to isolate tenants. |
 
-**Chosen Optional Capability:** **Advanced Security (#10)** - KMS CMK encryption for S3 and DynamoDB, with Key Rotation enabled[cite: 3, 4].
+**Chosen Optional Capability:** **Advanced Security (#10)** - KMS CMK encryption for S3 and DynamoDB, with Key Rotation enabled.
 
 ---
 
 ## 4. Cost Discipline
 
-**Cost Explorer Charts (Filtered by `Team=G<N>` tag):**[cite: 4]
+**Cost Explorer Charts (Filtered by `Team=G1` tag):**
 
 1. **Day 1 EOD:**
-![Cost Day 1](../docs/evidence/cost_day1.png)[cite: 3, 4]
+![Cost Day 1](../assets/cost_day1.png)[cite: 3, 4]
 
-2. **Day 2 EOD:**
-![Cost Day 2](../docs/evidence/cost_day2.png)[cite: 3, 4]
+1. **Day 2 EOD:**
+![Cost Day 2](../assets/cost_day2.png)[cite: 3, 4]
 
-3. **Friday Morning (Pre-demo):**
-![Cost Demo](../docs/evidence/cost_demo.png)[cite: 3, 4]
+1. **Friday Morning (Pre-demo):**
+![Cost Demo](../assets/cost_demo.png)[cite: 3, 4]
 
 * **Total 48h Spend:** `$1.77`[cite: 1, 4]
 * **Top 3 Cost Drivers:**[cite: 4]
@@ -102,10 +100,10 @@ The team implemented full Cognito User Pool authentication with JWT-based tenant
 The team implemented a deep security strategy alongside the mandatory IAM least-privilege[cite: 4]:
 
 * **IAM & Least-privilege:** Lambda Execution Role is strictly scoped to specific resources, with no `*` wildcards[cite: 4].
-![IAM Least Privilege Policy](../docs/evidence/iam_least_privilege.png)[cite: 4]
+![IAM Least Privilege Policy](../assets/iam_least_privilege.png)[cite: 4]
 
 * **KMS CMK (Encryption at rest) & Key Rotation:** Created a Customer Managed Key to encrypt S3 buckets/DynamoDB and enabled automatic key rotation[cite: 4].
-![KMS Key Rotation Enabled](../docs/evidence/kms_rotation_enabled.png)[cite: 4]
+![KMS Key Rotation Enabled](../assets/kms_rotation_enabled.png)[cite: 4]
 
 ---
 
@@ -113,10 +111,10 @@ The team implemented a deep security strategy alongside the mandatory IAM least-
 The system fully complies with all Pre-flight check requirements[cite: 4]:
 
 * **Budget Alert:** Configured SNS to send an email when costs exceed `$80` (80% of the `$100` cap), email subscription confirmed[cite: 1, 3, 4].
-![Budget Alert Confirmed](../docs/evidence/budget_alert.png)[cite: 4]
+![Budget Alert Confirmed](../assets/budget_alert.png)[cite: 4]
 
 * **Cost Anomaly Detection:** Monitor enabled since prep days[cite: 3, 4].
-![Cost Anomaly Enabled](../docs/evidence/cost_anomaly.png)[cite: 4]
+![Cost Anomaly Enabled](../assets/cost_anomaly.png)[cite: 4]
 
 ---
 
@@ -130,7 +128,7 @@ The system fully complies with all Pre-flight check requirements[cite: 4]:
   * S3 Vectors fixed OCU cost = `$0`[cite: 4].
   * Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`[cite: 1, 4].
 * **EVIDENCE:**
-![S3 Vectors Cost](../docs/evidence/cost_explorer_s3vectors.png)[cite: 4]
+![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)[cite: 4]
 * **TRADE-OFF ACCEPTED:**
   * S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless[cite: 1, 4].
 
@@ -141,7 +139,7 @@ The system fully complies with all Pre-flight check requirements[cite: 4]:
 * **MEASUREMENT:**
   * "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group[cite: 4].
 * **EVIDENCE:**
-![Agent Latency and Flow](../docs/evidence/agent_latency_cloudwatch.png)[cite: 4]
+![Agent Latency and Flow](../assets/agent_latency_cloudwatch.png)[cite: 4]
 * **TRADE-OFF ACCEPTED:**
   * Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer[cite: 4].
 
