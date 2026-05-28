@@ -98,6 +98,9 @@ Created CloudWatch alarms to proactively monitor DocHub system health. All alarm
 - Distinguishes between isolated errors vs systemic issues
 - Alarm successfully triggered during load testing, validating monitoring works correctly
 
+**Configuration Insight:**
+This alarm monitors Lambda Errors on the dochub-backend function (main backend for document upload/query). Any runtime error within 5 minutes triggers ALARM state and sends email notification. Missing data is configured as "not breaching" to avoid INSUFFICIENT_DATA during low-traffic demo periods.
+
 **Evidence:**
 - Both alarms successfully send email notifications when triggered
 - Alarms are actively monitoring real traffic (not INSUFFICIENT_DATA state)
