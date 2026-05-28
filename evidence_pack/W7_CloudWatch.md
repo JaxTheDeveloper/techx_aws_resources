@@ -4,7 +4,7 @@
 
 Created a comprehensive CloudWatch dashboard to monitor DocHub's key performance indicators and system health.
 
-![CloudWatch Dashboard Overview](../assets/DashBoard.jpeg)
+![CloudWatch Dashboard Overview](../assets/Dashboard.jpeg)
 
 **Dashboard Components:**
 - **Custom application metrics:** VectorSearchLatencyMs, QueryLatencyMs
