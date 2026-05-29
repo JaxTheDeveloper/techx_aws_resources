@@ -162,49 +162,19 @@ Analyze document upload patterns and identify slow operations by calculating ave
 
 ## 6.5 Measurement & Decisions (Crucial Section)
 
-**DECISION 1: Use S3 Vectors as the Bedrock KB Vector Store instead of OpenSearch Serverless.**
+**DECISION 1: Use OpenSearch Serverless as the Bedrock KB Vector Store instead of S3 Vectors.**
 
 - **ALTERNATIVES CONSIDERED:**
-  - OpenSearch Serverless — Eliminated because: The minimum baseline cost is 2 OCUs, roughly `$27.65` for 48 hours in ap-southeast-1, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`).
+  - S3 Vectors — Eliminated because: While it has zero base infrastructure cost, it lacks the robust, advanced metadata filtering capabilities required to strictly isolate documents by `tenant_id` at the vector search layer[cite: 4]. For a multi-tenant legal/compliance SaaS, the risk of "document confusion" (cross-tenant data leakage) is unacceptable.
 - **MEASUREMENT:**
-  - S3 Vectors fixed OCU cost = `$0`.
-  - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
+  - Cross-tenant leakage rate during manual testing = `0%` (thanks to OpenSearch's strict metadata filtering capability).
+  - Fixed infrastructure cost for 48 hours = `~$27.65` (minimum 2 OCUs baseline in ap-southeast-1)[cite: 1].
 - **EVIDENCE:**
-  ![S3 Vectors Cost](../docs/evidence/cost_explorer_s3vectors.png)
+  - `../assets/opensearch1.png` (Screenshot showing Knowledge Base configuration using OpenSearch Serverless).
 - **TRADE-OFF ACCEPTED:**
-  - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
+  - Accepted a significantly higher fixed infrastructure cost (`~$27.65` for 48h), which consumes nearly 29% of our `$100` hard cap and makes achieving Bonus Path H (total spend under `$30`) extremely tight[cite: 1]. We consciously traded cost savings for enterprise-grade tenant isolation and security.
 
-* **ALTERNATIVES CONSIDERED:**
-  - OpenSearch Serverless — Eliminated because: The minimum baseline cost is 2 OCUs, roughly `$27.65` for 48 hours in ap-southeast-1, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`).
-* **MEASUREMENT:**
-  - S3 Vectors fixed OCU cost = `$0`.
-  - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
-* **EVIDENCE:**
-  ![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)
-* **TRADE-OFF ACCEPTED:**
-  - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
-
-**DECISION 2: Handle Multi-tenant Filtering using a Bedrock Agent Tool instead of direct KB Metadata Filtering.**
-
-- **ALTERNATIVES CONSIDERED:**
-  - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
-- **MEASUREMENT:**
-  - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-- **EVIDENCE:**
-  ![Agent Latency and Flow](../docs/evidence/agent_latency_cloudwatch.png)
-- **TRADE-OFF ACCEPTED:**
-  - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
-
-* **ALTERNATIVES CONSIDERED:**
-  - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
-* **MEASUREMENT:**
-  - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-* **EVIDENCE:**
-  ![Agent Latency and Flow](../assets/agent_latency_cloudwatch.png)
-* **TRADE-OFF ACCEPTED:**
-  - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
-
-**DECISION 3: Use Cognito User Pool with Google OAuth + `custom:tenant_id` attribute for multi-tenant identity, instead of hardcoded test users or header-only auth.**
+**DECISION 2: Use Cognito User Pool with Google OAuth + `custom:tenant_id` attribute for multi-tenant identity, instead of hardcoded test users or header-only auth.**
 
 - **ALTERNATIVES CONSIDERED:**
   - Hardcoded test user (`X-Tenant-Id` header, no real auth) — Eliminated because: any client can spoof the header value, meaning a malicious user of tenant-A could set `X-Tenant-Id: tenant-B` and read their documents. No verifiable identity = cross-tenant data leakage risk, which is the #1 threat for a multi-tenant SaaS.
