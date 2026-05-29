@@ -218,10 +218,21 @@ Analyze document upload patterns and identify slow operations by calculating ave
   - Cognito cost for < 50K MAU = `$0` (free tier; does not affect Bonus Path H eligibility).
 
 - **EVIDENCE:**
-  - `../assets/cognito_userpool.png` — User Pool overview (7 users, created May 27)
-  - `../assets/cognito_group_for_tenant.png` — `custom:tenant_id` attribute defined on User Pool
-  - `../assets/cognito_google_idp.png` — Google provider with `email` + `sub` attribute mapping
-  - `../assets/cognito_login_page.png` — Hosted UI at `https://docs4hub.tech` showing Google + email sign-in
+  - User Pool overview (7 users, created May 27)
+
+    ![User Pool overview](../assets/cognito_userpool.png)
+
+  - `custom:tenant_id` attribute defined on User Pool
+
+    ![Tenant attribute on User Pool](../assets/cognito_group_for_tenant.png)
+
+  - Google provider with `email` + `sub` attribute mapping
+
+    ![Google IdP mapping](../assets/cognito_google_idp.png)
+
+  - Hosted UI at `https://docs4hub.tech` showing Google + email sign-in
+
+    ![Cognito login page](../assets/cognito_login_page.png)
 
 - **TRADE-OFF ACCEPTED:**
   - MFA is **disabled** (`No MFA` enforcement). For legal/compliance users in production, TOTP MFA would be mandatory. For the 48h hackathon demo, the friction of requiring a TOTP app during trainer testing outweighs the security gain. Noted as a Phase 2 requirement.
