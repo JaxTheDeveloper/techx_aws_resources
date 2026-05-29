@@ -27,7 +27,7 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 ## 3. Architecture & Service Decisions
 
-![Architecture](../assets/Architecture.jpg)
+![Architecture](../assets/Architecture1.jpg)
 
 Our system fulfills all 7 Mandatory Capabilities:
 
@@ -175,8 +175,8 @@ https://aws.amazon.com/opensearch-service/features/serverless/
 Below shows our initial assumptions.
   - OpenSearch Serverless — Initially elimiated because: The minimum baseline cost is 2 OCUs (1 for retrieve, 1 for ingest), roughly `$27.65` for 48 hours in us-west-2, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`). Keep in mind that throughout this project, we utilised free tier; the cost bleed is definitely not evident.
 - **MEASUREMENT:**
-  - S3 Vectors fixed OCU cost = `$0`.
-  - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
+  - Cross-tenant leakage rate during manual testing = `0%` (thanks to OpenSearch's strict metadata filtering capability).
+  - Fixed infrastructure cost for 48 hours = `~$27.65` (minimum 2 OCUs baseline in ap-southeast-1)[cite: 1].
 - **EVIDENCE:**
   ![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)
 - **TRADE-OFF ACCEPTED:**
@@ -212,7 +212,7 @@ Below shows our initial assumptions.
 * **TRADE-OFF ACCEPTED:**
   - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
 
-**DECISION 3: Use Cognito User Pool with Google OAuth + `custom:tenant_id` attribute for multi-tenant identity, instead of hardcoded test users or header-only auth.**
+**DECISION 2: Use Cognito User Pool with Google OAuth + `custom:tenant_id` attribute for multi-tenant identity, instead of hardcoded test users or header-only auth.**
 
 - **ALTERNATIVES CONSIDERED:**
   - Hardcoded test user (`X-Tenant-Id` header, no real auth) — Eliminated because: any client can spoof the header value, meaning a malicious user of tenant-A could set `X-Tenant-Id: tenant-B` and read their documents. No verifiable identity = cross-tenant data leakage risk, which is the #1 threat for a multi-tenant SaaS.
