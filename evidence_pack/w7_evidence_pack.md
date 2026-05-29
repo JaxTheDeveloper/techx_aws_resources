@@ -345,23 +345,6 @@ Below shows our initial assumptions.
 * **TRADE-OFFs:**
   - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
 
-**DECISION 2: Handle Multi-tenant Filtering using a Bedrock Agent Tool instead of direct KB Metadata Filtering.**
-
-- **ALTERNATIVES CONSIDERED:**
-  - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
-- **MEASUREMENT:**
-  - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-- **TRADE-OFF ACCEPTED:**
-  - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
-
-* **ALTERNATIVES CONSIDERED:**
-  - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
-* **MEASUREMENT:**
-  - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-
-* **TRADE-OFF ACCEPTED:**
-  - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
-
 **DECISION 2: Cognito User Pool with Google OAuth + `custom:tenant_id` claim instead of hardcoded test users or header-only auth**
 
 - **ALTERNATIVES CONSIDERED:**
