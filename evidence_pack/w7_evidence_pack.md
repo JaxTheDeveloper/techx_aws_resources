@@ -16,7 +16,7 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 - **The Problem:** Legal teams spend too much time searching for specific clauses scattered across dozens of different contract versions.
 - **The AI Solution:** Automating information extraction and summarization based on strictly isolated tenant access rights.
-- # **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
+- **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
   AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance teams manage, search, and cross-query thousands of contracts and policy documents.
 
 * **The Problem:** Legal teams spend too much time searching for specific clauses scattered across dozens of different contract versions.
@@ -172,7 +172,7 @@ Analyze document upload patterns and identify slow operations by calculating ave
 - **EVIDENCE:**
   ![S3 Vectors Cost](../docs/evidence/cost_explorer_s3vectors.png)
 - **TRADE-OFF ACCEPTED:**
-  - # S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
+  - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
 
 * **ALTERNATIVES CONSIDERED:**
   - OpenSearch Serverless — Eliminated because: The minimum baseline cost is 2 OCUs, roughly `$27.65` for 48 hours in ap-southeast-1, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`).
@@ -193,7 +193,7 @@ Analyze document upload patterns and identify slow operations by calculating ave
 - **EVIDENCE:**
   ![Agent Latency and Flow](../docs/evidence/agent_latency_cloudwatch.png)
 - **TRADE-OFF ACCEPTED:**
-  - # Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
+  - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
 
 * **ALTERNATIVES CONSIDERED:**
   - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
