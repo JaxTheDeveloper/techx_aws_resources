@@ -277,8 +277,6 @@ Below shows our initial assumptions.
   - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
 - **MEASUREMENT:**
   - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-- **EVIDENCE:**
-  ![Agent Latency and Flow](../docs/evidence/agent_latency_cloudwatch.png)
 - **TRADE-OFF ACCEPTED:**
   - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
 
@@ -286,8 +284,7 @@ Below shows our initial assumptions.
   - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
 * **MEASUREMENT:**
   - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
-* **EVIDENCE:**
-  ![Agent Latency and Flow](../assets/agent_latency_cloudwatch.png)
+
 * **TRADE-OFF ACCEPTED:**
   - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
 
