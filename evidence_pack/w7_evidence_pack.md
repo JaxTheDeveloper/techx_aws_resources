@@ -27,7 +27,7 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 ## 3. Architecture & Service Decisions
 
-![VPC Endpoints Configuration](../assets/architech.png)
+![Architecture](../assets/Architecture.jpg)
 
 Our system fulfills all 7 Mandatory Capabilities:
 
