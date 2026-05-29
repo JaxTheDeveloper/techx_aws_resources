@@ -26,15 +26,15 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 Our system fulfills all 7 Mandatory Capabilities:
 
-| Mandatory Capability    | Chosen Service                                                 | Rationale                                                                                                                                                                                                                                                    |
-| :---------------------- | :------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1. User Interface**   | CloudFront + S3 Static                                         | Provides a free public HTTPS URL on `*.cloudfront.net`, zero certificate management, and low-latency delivery via Asia edge nodes.                                                                                                                            |
-| **2. App Compute**      | API Gateway HTTP + Lambda                                      | HTTP API is ~3.5× cheaper than REST API per request; Lambda has zero idle cost and scales to concurrency per request, matching bursty hackathon traffic patterns.                                                                                            |
-| **3. AI / ML**          | Bedrock Agent + KB (Claude 3.5 Haiku)                          | Agent enables tool use — a Lambda action group filters documents by `tenant_id` before KB retrieval, preventing cross-tenant document confusion at the retrieval layer.                                                                                       |
-| **4. Data Persistence** | DynamoDB (On-demand)                                           | Document metadata is always queried as `PK=tenant_id, SK=DOC#<doc_id>` — a single-key lookup with no JOINs or aggregations. DynamoDB on-demand handles variable load with zero provisioning and no idle charge.                                             |
-| **5. Object Storage**   | S3 Bucket (Multi-tenant prefix `tenant_id/doc_id/`)            | Stores original document files. Per-tenant prefix ensures isolation at the storage key layer. Block Public Access enabled. SSE-KMS with CMK for encryption at rest (see §5b).                                                                                |
-| **6. Network**          | VPC + 2 private subnets + SGs + NACL + VPC Endpoints          | No public subnet, no Internet Gateway, no NAT Gateway. Lambda runs in fully private subnets and reaches Bedrock via Interface Endpoint, S3/DynamoDB via free Gateway Endpoints. SG on the VPC endpoint restricts ingress to `lambda-backend-sg` only — no CIDR. NACL adds a stateless second layer. Full detail in §5c. |
-| **7. Identity**         | Cognito User Pool + IAM least-privilege roles                  | Cognito issues JWTs with `custom:tenant_id` claim; API Gateway JWT Authorizer validates signatures before Lambda is invoked. Lambda IAM execution role scoped to named actions on specific ARNs only — no wildcards.                                         |
+| Mandatory Capability    | Chosen Service                                       | Rationale                                                                                                                                                                                                                                                                                                               |
+| :---------------------- | :--------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. User Interface**   | CloudFront + S3 Static                               | Provides a free public HTTPS URL on `*.cloudfront.net`, zero certificate management, and low-latency delivery via Asia edge nodes.                                                                                                                                                                                      |
+| **2. App Compute**      | API Gateway HTTP + Lambda                            | HTTP API is ~3.5× cheaper than REST API per request; Lambda has zero idle cost and scales to concurrency per request, matching bursty hackathon traffic patterns.                                                                                                                                                       |
+| **3. AI / ML**          | Bedrock Agent + KB (Claude 3.5 Haiku)                | Agent enables tool use — a Lambda action group filters documents by `tenant_id` before KB retrieval, preventing cross-tenant document confusion at the retrieval layer.                                                                                                                                                 |
+| **4. Data Persistence** | DynamoDB (On-demand)                                 | Document metadata is always queried as `PK=tenant_id, SK=DOC#<doc_id>` — a single-key lookup with no JOINs or aggregations. DynamoDB on-demand handles variable load with zero provisioning and no idle charge.                                                                                                         |
+| **5. Object Storage**   | S3 Bucket (Multi-tenant prefix `tenant_id/doc_id/`)  | Stores original document files. Per-tenant prefix ensures isolation at the storage key layer. Block Public Access enabled. SSE-KMS with CMK for encryption at rest (see §5b).                                                                                                                                           |
+| **6. Network**          | VPC + 2 private subnets + SGs + NACL + VPC Endpoints | No public subnet, no Internet Gateway, no NAT Gateway. Lambda runs in fully private subnets and reaches Bedrock via Interface Endpoint, S3/DynamoDB via free Gateway Endpoints. SG on the VPC endpoint restricts ingress to `lambda-backend-sg` only — no CIDR. NACL adds a stateless second layer. Full detail in §5c. |
+| **7. Identity**         | Cognito User Pool + IAM least-privilege roles        | Cognito issues JWTs with `custom:tenant_id` claim; API Gateway JWT Authorizer validates signatures before Lambda is invoked. Lambda IAM execution role scoped to named actions on specific ARNs only — no wildcards.                                                                                                    |
 
 **Chosen Optional Capability:** **Advanced Security (#10)** — KMS CMK encryption for S3 and DynamoDB, with automatic annual key rotation enabled.
 
@@ -64,15 +64,15 @@ Every billable resource received a standard set of tags (`Project=W7Capstone`, `
 
 By utilizing AWS Free Tier limits (1M Lambda requests, 25 GB DynamoDB, 5 GB S3, 1 TB CloudFront), our actual cash spend was kept exceptionally low.
 
-| Service                                  | Cost    | Why                                                          |
-| :--------------------------------------- | :------ | :----------------------------------------------------------- |
-| Lambda & API Gateway & S3 & DynamoDB     | $0      | Covered by AWS Free Tier                                     |
-| Cognito User Pool                        | $0      | Free tier (50K MAU)                                          |
-| Bedrock Knowledge Base (embedding)       | $0      | Covered by Bedrock Free Tier                                 |
-| OpenSearch Serverless (KB vector store)  | ~$0.15  | Not free tier — 2 OCU minimum; largest single cost driver    |
-| Bedrock Claude 3.5 Haiku (inference)     | ~$0.02  | Pay-as-you-go; ~500K input + 50K output tokens across 48h   |
-| KMS CMK (S3 + DynamoDB encryption)       | ~$0.07  | $1/key/month prorated to 48h                                 |
-| Bedrock Runtime Interface VPC Endpoint   | ~$0.62  | $0.013/hr × 48h × 1 AZ; replaces NAT Gateway (~$2.83/48h)  |
+| Service                                 | Cost   | Why                                                       |
+| :-------------------------------------- | :----- | :-------------------------------------------------------- |
+| Lambda & API Gateway & S3 & DynamoDB    | $0     | Covered by AWS Free Tier                                  |
+| Cognito User Pool                       | $0     | Free tier (50K MAU)                                       |
+| Bedrock Knowledge Base (embedding)      | $0     | Covered by Bedrock Free Tier                              |
+| OpenSearch Serverless (KB vector store) | ~$0.15 | Not free tier — 2 OCU minimum; largest single cost driver |
+| Bedrock Claude 3.5 Haiku (inference)    | ~$0.02 | Pay-as-you-go; ~500K input + 50K output tokens across 48h |
+| KMS CMK (S3 + DynamoDB encryption)      | ~$0.07 | $1/key/month prorated to 48h                              |
+| Bedrock Runtime Interface VPC Endpoint  | ~$0.62 | $0.013/hr × 48h × 1 AZ; replaces NAT Gateway (~$2.83/48h) |
 
 **Total 48h Spend:** `~$0.47`
 
@@ -83,11 +83,14 @@ By utilizing AWS Free Tier limits (1M Lambda requests, 25 GB DynamoDB, 5 GB S3, 
 
 ---
 
-## 5. Security (Advanced Security Option + Mandatory Identity)
+## 5. JWT Authentication & Tenant Isolation Architecture
 
-### 5a. Identity & Access — Cognito JWT (Mandatory #7)
+For the DocHub capstone, strict multi-tenant data isolation is the critical security property of the system. To guarantee that a bug in the handler code cannot leak cross-tenant data, we implemented a highly secure identity pipeline using Amazon Cognito, API Gateway, and FastAPI with Mangum.
 
-The team implemented full Cognito User Pool authentication with JWT-based tenant isolation:
+Because identity is non-trivial and we needed a way to securely populate the tenant ID without relying on easily spoofed client headers, we chose an **Application Compute Extraction** approach.
+
+Process overview:
+![alt text](../assets/image-3.png)
 
 | Attribute                 | Value                                                                                                                           |
 | :------------------------ | :------------------------------------------------------------------------------------------------------------------------------ |
@@ -103,7 +106,12 @@ The team implemented full Cognito User Pool authentication with JWT-based tenant
 | **MFA**                   | Disabled (accepted trade-off — see §6.5 Decision 2)                                                                             |
 | **Self-service recovery** | Email only                                                                                                                      |
 
-**How JWT enforces multi-tenancy end-to-end:**
+### 5.1. Cognito Pre-Token Generation Lambda
+
+![alt text](../assets/image-7.png)
+![alt text](../assets/image-9.png)
+
+`custom:tenant_id` is defined as a mutable string attribute. Email is required and Cognito-managed verification is enabled for sign-up. The custom attribute is useful for admin workflows, reporting, or as an additional user metadata source.
 
 1. User logs in → Cognito issues `id_token` with `custom:tenant_id` claim embedded
 2. Frontend sends `Authorization: Bearer <id_token>` on every API request
@@ -111,11 +119,77 @@ The team implemented full Cognito User Pool authentication with JWT-based tenant
 4. Lambda reads `tenant_id` from the validated claims — never trusts the `X-Tenant-Id` client header alone
 5. Vector store search and DynamoDB queries are both filtered by this `tenant_id` (defense in depth)
 
-![Cognito User Pool Overview](../assets/cognito_userpool.png)
-![App Client DocHub](../assets/cognito_app_client.png)
-![Custom Attribute tenant_id](../assets/cognito_group_for_tenant.png)
-![Google Identity Provider](../assets/cognito_google_idp.png)
-![Hosted Login Page at docs4hub.tech](../assets/cognito_login_page.png)
+![alt text](../assets/image-5.png)
+
+We organize users into Cognito Groups (for example, `tenant-acme` and `tenant-globex`).
+![alt text](../assets/image.png)
+![alt text](../assets/image-1.png)
+![alt text](../assets/image-2.png)
+
+> Note: In our application, one user can belong to multiple `tenant` groups.
+> ![Cognito Sign-up screenshot](../assets/image-4.png)
+
+Instead of **relying on the client to declare its tenant**, we use a **Cognito Pre-Token Generation Lambda trigger**. That way, the issued ID token carries a trusted, server-controlled tenant identity claim instead of relying on client-supplied headers.
+
+```python
+import json
+
+def lambda_handler(event, context):
+    groups = (
+        event.get("request", {})
+        .get("groupConfiguration", {})
+        .get("groupsToOverride", [])
+    )
+    if groups:
+        event["response"]["claimsOverrideDetails"] = {
+            "claimsToAddOrOverride": {
+                "cognito:groups": ",".join(groups)
+            }
+        }
+    return event
+```
+
+This Lambda runs during Cognito’s Pre-Token Generation trigger.
+![alt text](../assets/image-6.png)
+It reads the user’s resolved Cognito groups from the login event, and if groups exist it adds or overrides the `cognito:groups` claim in the token response.
+
+### 5.2. API Gateway Validation
+
+The `dochub-http-api` routes configured with the `Dochub-Cognito-JWT-Authorizer`.
+![API Gateway route authorization configuration](../assets/image-11.png)
+
+Protected routes include `/upload`, `/query`, and `/docs/list`, while the health endpoint can remain open or use a separate policy. This demonstrates that authorization is enforced at the API route level, before the request reaches the backend.
+![JWT authorizer details for DocHub-Cognito-JWT-Authorizer](../assets/image-10.png)
+
+- The authorizer is a **JWT** authorizer with identity source set to `$request.header.Authorization`.
+- The audience is the Cognito app client ID used by the frontend.
+  ![alt text](../assets/image-12.png)
+- No authorization scopes are required for these routes, so token validity alone is sufficient for access.
+
+When the frontend sends an API request (for example, `/upload` or `/query`), it includes the JWT in the `Authorization: Bearer` header.
+
+- API Gateway uses a **JWT Authorizer** to mathematically verify the token's signature against our Cognito User Pool.
+- **Architectural Decision:**
+  - We deliberately bypassed API Gateway's Parameter Mapping layer. API Gateway's mapping expression throws an `Invalid mapping expression specified` error when trying to parse claims containing a colon (like `cognito:groups`).
+  - Instead, API Gateway validates the token and securely forwards the _raw, verified event payload_ directly to the backend.
+
+### 5.3. FastAPI & Mangum Extraction
+
+To read the verified token inside our backend, we use the `mangum` adapter, which wraps the FastAPI application to run on AWS Lambda.
+
+- **Mangum** takes the raw AWS API Gateway event - which includes the fully decoded and validated JWT claims dictionary - and passes it into the FastAPI application context.
+- Because standard Python dictionaries have no limitations on string keys with colons, our FastAPI backend seamlessly extracts `claims.get("cognito:groups")` to determine the exact `tenant_id`.
+- The backend then uses this verified `tenant_id` to enforce strict isolation at the DynamoDB metadata layer and Bedrock vector store filtering layer.
+
+### 5.4 Why We Chose This Approach (Trade-offs)
+
+- **Security First:** The FastAPI backend never has to guess if the user is spoofing an `x-tenant-id` HTTP header. It strictly trusts the claims verified by API Gateway.
+- **Flexibility:** By handling the token extraction directly in the application compute layer (FastAPI), we successfully bypass API Gateway's rigid naming limitations while maintaining absolute tenant isolation.
+
+### Summary
+
+- This architecture ensures tenant identity is derived from a secure, Cognito-sanctioned source rather than untrusted request metadata.
+- The combination of Cognito Pre-Token Generation, API Gateway JWT validation, and Mangum-backed FastAPI extraction creates a robust pipeline where tenant isolation is enforced before any data access logic executes.
 
 ---
 
@@ -138,25 +212,25 @@ All network resources are defined in Terraform (`vpc.tf`, `route_tables.tf`, `in
 
 #### VPC & Subnet Layout
 
-| Resource | Value | Rationale |
-| :--- | :--- | :--- |
-| VPC CIDR | `10.0.0.0/16` | Standard RFC-1918 block; 65,536 IPs — room for future subnets |
-| DNS support | `true` | Required for Interface VPC Endpoint private DNS resolution |
-| DNS hostnames | `true` | Required alongside DNS support for endpoint DNS to resolve |
-| AZ-1 private subnet | `10.0.8.0/22` | 1,022 usable IPs for Lambda ENIs and future ECS tasks |
-| AZ-2 private subnet | `10.0.12.0/22` | Same size; second AZ for endpoint redundancy |
-| Public subnet | **None deployed** | No internet-facing workloads; API Gateway is the only public entry point and is managed by AWS outside the VPC |
-| Internet Gateway | **None** | Not needed — no resources require inbound or outbound internet |
-| NAT Gateway | **None** | Lambda only calls AWS services (Bedrock, S3, DynamoDB) — fully covered by VPC Endpoints at lower cost |
+| Resource            | Value             | Rationale                                                                                                      |
+| :------------------ | :---------------- | :------------------------------------------------------------------------------------------------------------- |
+| VPC CIDR            | `10.0.0.0/16`     | Standard RFC-1918 block; 65,536 IPs — room for future subnets                                                  |
+| DNS support         | `true`            | Required for Interface VPC Endpoint private DNS resolution                                                     |
+| DNS hostnames       | `true`            | Required alongside DNS support for endpoint DNS to resolve                                                     |
+| AZ-1 private subnet | `10.0.8.0/22`     | 1,022 usable IPs for Lambda ENIs and future ECS tasks                                                          |
+| AZ-2 private subnet | `10.0.12.0/22`    | Same size; second AZ for endpoint redundancy                                                                   |
+| Public subnet       | **None deployed** | No internet-facing workloads; API Gateway is the only public entry point and is managed by AWS outside the VPC |
+| Internet Gateway    | **None**          | Not needed — no resources require inbound or outbound internet                                                 |
+| NAT Gateway         | **None**          | Lambda only calls AWS services (Bedrock, S3, DynamoDB) — fully covered by VPC Endpoints at lower cost          |
 
 #### Route Tables & VPC Endpoints
 
 A single private route table is associated to both AZs. Two free Gateway Endpoints inject routes directly into it; one Interface Endpoint handles Bedrock:
 
-| Endpoint | Type | 48h Cost | Notes |
-| :--- | :--- | :--- | :--- |
-| `com.amazonaws.us-west-2.s3` | Gateway | **$0** | Routes S3 traffic within AWS backbone — no data charge |
-| `com.amazonaws.us-west-2.dynamodb` | Gateway | **$0** | Same; free gateway endpoint |
+| Endpoint                                  | Type      | 48h Cost   | Notes                                                                                                                             |
+| :---------------------------------------- | :-------- | :--------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `com.amazonaws.us-west-2.s3`              | Gateway   | **$0**     | Routes S3 traffic within AWS backbone — no data charge                                                                            |
+| `com.amazonaws.us-west-2.dynamodb`        | Gateway   | **$0**     | Same; free gateway endpoint                                                                                                       |
 | `com.amazonaws.us-west-2.bedrock-runtime` | Interface | **~$0.62** | `$0.013/hr × 48h`; private DNS enabled so Lambda resolves `bedrock-runtime.us-west-2.amazonaws.com` to a private IP automatically |
 
 NAT Gateway alternative cost for comparison: `$0.059/hr × 48h = $2.83` base + `$0.059/GB` data — 4.5× more expensive for the same capability.
@@ -167,17 +241,17 @@ Two security groups enforce least-privilege at the network layer. Critically, no
 
 **`lambda-backend-sg`** (attached to Lambda functions):
 
-| Direction | Rule | Why |
-| :--- | :--- | :--- |
-| Ingress | None | Lambda is not a server; it never receives inbound connections |
-| Egress | All traffic (`0.0.0.0/0`) | Allows Lambda to initiate HTTPS calls to VPC endpoints on port 443 |
+| Direction | Rule                      | Why                                                                |
+| :-------- | :------------------------ | :----------------------------------------------------------------- |
+| Ingress   | None                      | Lambda is not a server; it never receives inbound connections      |
+| Egress    | All traffic (`0.0.0.0/0`) | Allows Lambda to initiate HTTPS calls to VPC endpoints on port 443 |
 
 **`vpc-endpoint-sg`** (attached to Bedrock Runtime Interface Endpoint):
 
-| Direction | Rule | Why |
-| :--- | :--- | :--- |
-| Ingress | TCP 443 from `lambda-backend-sg` | Only Lambda functions in `lambda-backend-sg` can reach the endpoint — no CIDR, so an EC2 or other resource in the VPC with a different SG cannot reach Bedrock even if it tries |
-| Egress | All traffic (`0.0.0.0/0`) | Allows the endpoint to return responses to Lambda |
+| Direction | Rule                             | Why                                                                                                                                                                             |
+| :-------- | :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ingress   | TCP 443 from `lambda-backend-sg` | Only Lambda functions in `lambda-backend-sg` can reach the endpoint — no CIDR, so an EC2 or other resource in the VPC with a different SG cannot reach Bedrock even if it tries |
+| Egress    | All traffic (`0.0.0.0/0`)        | Allows the endpoint to return responses to Lambda                                                                                                                               |
 
 The SG-to-SG reference pattern is the correct isolation design: identity-based, not address-based. A new resource added to the VPC with any other SG has zero access to Bedrock by default.
 
@@ -185,13 +259,13 @@ The SG-to-SG reference pattern is the correct isolation design: identity-based, 
 
 A custom NACL is applied to both private subnets (`vpc_az1_private_app` and `vpc_az2_private_app`) as a stateless second enforcement layer independent of Security Groups:
 
-| Direction | Rule # | Protocol | Ports | Source / Dest | Action | Why |
-| :--- | :---: | :--- | :--- | :--- | :--- | :--- |
-| Ingress | 100 | TCP | 443 | `10.0.0.0/16` (VPC CIDR) | ALLOW | Accepts HTTPS only from within the VPC — internal Lambda-to-endpoint traffic |
-| Ingress | 200 | TCP | 1024–65535 | `0.0.0.0/0` | ALLOW | Ephemeral return ports for TCP responses from VPC endpoints back to Lambda |
-| Egress | 100 | TCP | 443 | `0.0.0.0/0` | ALLOW | Lambda calls AWS services on port 443 |
-| Egress | 200 | TCP | 1024–65535 | `10.0.0.0/16` (VPC CIDR) | ALLOW | Ephemeral return traffic from endpoint back to Lambda within the VPC |
-| Ingress/Egress | * | All | All | All | DENY | Implicit default — all other traffic blocked |
+| Direction      | Rule # | Protocol | Ports      | Source / Dest            | Action | Why                                                                          |
+| :------------- | :----: | :------- | :--------- | :----------------------- | :----- | :--------------------------------------------------------------------------- |
+| Ingress        |  100   | TCP      | 443        | `10.0.0.0/16` (VPC CIDR) | ALLOW  | Accepts HTTPS only from within the VPC — internal Lambda-to-endpoint traffic |
+| Ingress        |  200   | TCP      | 1024–65535 | `0.0.0.0/0`              | ALLOW  | Ephemeral return ports for TCP responses from VPC endpoints back to Lambda   |
+| Egress         |  100   | TCP      | 443        | `0.0.0.0/0`              | ALLOW  | Lambda calls AWS services on port 443                                        |
+| Egress         |  200   | TCP      | 1024–65535 | `10.0.0.0/16` (VPC CIDR) | ALLOW  | Ephemeral return traffic from endpoint back to Lambda within the VPC         |
+| Ingress/Egress |   \*   | All      | All        | All                      | DENY   | Implicit default — all other traffic blocked                                 |
 
 NACLs are stateless: both the request and the response direction must be explicitly permitted, which is why ephemeral port rules (1024–65535) appear in both directions. No rule permits any traffic on any port from outside `10.0.0.0/16` except the ephemeral response ports required by TCP.
 
