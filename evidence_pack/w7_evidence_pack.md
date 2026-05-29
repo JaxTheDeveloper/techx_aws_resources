@@ -162,15 +162,23 @@ Analyze document upload patterns and identify slow operations by calculating ave
 
 ## 6.5 Measurement & Decisions (Crucial Section)
 
-**DECISION 1: Use S3 Vectors as the Bedrock KB Vector Store instead of OpenSearch Serverless.**
+**DECISION 1: Used OpenSearch Serverless instead of S3 Vectors.**
+We initially planned to use S3 Vectors instead of the OpenSearch Serverless, for mainly our initial concern of costs (before we have observed how the budget differs between two scopes: unblened vs. net blended, which deducts the free tier costs). With S3 vectors, we benefit from the low cost per GB storage costs, with a few limitations.
 
-- **ALTERNATIVES CONSIDERED:**
-  - OpenSearch Serverless — Eliminated because: The minimum baseline cost is 2 OCUs, roughly `$27.65` for 48 hours in ap-southeast-1, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`).
+Due to the nature of S3, the chunks are queried using S3's own API, which adds the overhead of application, thus we arrive at our first tradeoff: worse latency cf. OpenSearch Serverless. Another trade-off is that S3 is an object storage, which definitely does not support keyword search, which normally needs to consider unpacking the contents of every single chunks. And thirdly, We have attempted S3 vectors but to little success. We do not know clearly what happened nor are we aware of how to tailor the codebase to accomodate to S3 (operational overheads). Thus, for our final decision, OpenSearch serverless is chosen.
+
+For more information, we referenced the following articles to formulate our design decisions.
+
+https://aws.amazon.com/s3/features/vectors/
+https://aws.amazon.com/opensearch-service/features/serverless/
+
+Below shows our initial assumptions.
+  - OpenSearch Serverless — Initially elimiated because: The minimum baseline cost is 2 OCUs (1 for retrieve, 1 for ingest), roughly `$27.65` for 48 hours in us-west-2, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`). Keep in mind that throughout this project, we utilised free tier; the cost bleed is definitely not evident.
 - **MEASUREMENT:**
   - S3 Vectors fixed OCU cost = `$0`.
   - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
 - **EVIDENCE:**
-  ![S3 Vectors Cost](../docs/evidence/cost_explorer_s3vectors.png)
+  ![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)
 - **TRADE-OFF ACCEPTED:**
   - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
 
@@ -181,7 +189,7 @@ Analyze document upload patterns and identify slow operations by calculating ave
   - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
 * **EVIDENCE:**
   ![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)
-* **TRADE-OFF ACCEPTED:**
+* **TRADE-OFFs:**
   - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
 
 **DECISION 2: Handle Multi-tenant Filtering using a Bedrock Agent Tool instead of direct KB Metadata Filtering.**
@@ -237,6 +245,20 @@ Analyze document upload patterns and identify slow operations by calculating ave
 - **TRADE-OFF ACCEPTED:**
   - MFA is **disabled** (`No MFA` enforcement). For legal/compliance users in production, TOTP MFA would be mandatory. For the 48h hackathon demo, the friction of requiring a TOTP app during trainer testing outweighs the security gain. Noted as a Phase 2 requirement.
   - Google OAuth requires maintaining a live Google Cloud OAuth app client secret. If the secret rotates or the Google project is suspended post-demo, login breaks. Accepted for hackathon scope; Secrets Manager rotation would be the production fix.
+
+**DECISION 4: Implemented One Big Table for to solve multi tenancy problem.**
+
+In our architecture, we implemented what is known as the Pool Model, or Single Table Design, which, by documetation, is the best data modelling technique to leverage in DynamoDB. While it might initially seem risky to store data from multiple tenants—such as tenant-acme and tenant-globex—right next to each other in the exact same database table, we chose this approach because it is vastly more scalable and cost-effective than provisioning isolated, individual tables for every single customer. DynamoDB bills per table, should a large volume of users use the system, but they do not use it often, we would still have to pay for the extra costs. 
+
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/data-modeling.html
+
+Within our dochub-docs DynamoDB table, we intentionally moved away from traditional relational SQL models in favor of a strictly partitioned NoSQL structure. We use the Partition Key, mapped directly to our tenant_id, as the ultimate physical and logical boundary to isolate customer data at the server node level. Within each partition, we organize the data using a Sort Key (sk) formatted as DOC#{doc_id} (for example, DOC#353805eb-b5f5...). This allows our application to instantly query specific documents while safely storing crucial metadata attributes alongside the keys, including chars, content_hash, created_at, doc_type, and the human-readable filename.
+
+Because we pool this data together, our security model relies on strict, defense-in-depth enforcement of the Partition Key at the application layer. When a user authenticates, Cognito signs a JWT and forcibly injects their allowed tenant into a designated claim. Our backend application acts as an uncompromising gatekeeper, extracting this cryptographic claim and ignoring any manual user input. When our data adapter communicates with DynamoDB, it is hardcoded to use that verified tenant_id as the Partition Key in every query. This design makes it mathematically impossible for the database SDK to accidentally bleed data across tenant boundaries, ensuring that a user authenticated for tenant-acme can never access records belonging to tenant-globex.
+
+Furthermore, to keep the rest of our multi-tenant infrastructure safely in sync without compromising API performance, we leverage event-driven decoupling. We configured an EventBridge rule named dochub-s3-to-kb-sync that continuously monitors our central S3 bucket, dochub-docss. The exact second a new file is successfully uploaded and matches the "Object Created" event pattern, this rule is triggered. By offloading the heavy knowledge base and AI syncing processes to this asynchronous background event, we ensure our primary API remains lightning-fast for the end user while our backend safely processes the multi-tenant workloads in complete isolation.
+
+![alt text](../assets/dynamodb_data_model.png)
 
 ---
 
