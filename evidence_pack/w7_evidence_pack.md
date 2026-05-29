@@ -279,7 +279,7 @@ A Lambda call to Bedrock must clear three independent enforcement layers:
 
 All three must pass. A misconfiguration in any single layer does not automatically expose Bedrock — the other two layers still enforce. This is defense-in-depth at the network layer.
 
-![VPC Configuration](../assets/vpc.png)
+![VPC Configuration](../assets/vpc_1.png)
 
 ---
 
