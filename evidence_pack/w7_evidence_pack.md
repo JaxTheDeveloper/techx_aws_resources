@@ -13,10 +13,10 @@
 - Trần Đình Minh Quân
 - Nguyễn Hoàng Huy
 - Phạm Tùng Dương
-- **Live URL (HTTPS):** `https://[id].cloudfront.net`
-- **GitHub Repo:** `https://github.com/[username]/[repo]`
+- **Live URL (HTTPS):** `https://docs4hub.tech`
+- **GitHub Repo:** `https://github.com/JaxTheDeveloper/techx_aws_resources/tree/week-7-capstone`
 - **Domain:** C - ProductivityTech ("AI Document Hub")
-- **Total Spend:** `$[Amount, e.g., 1.77]` (Eligible for Bonus Path H)
+- **Total Spend:** `< $0.5` (Eligible for Bonus Path H)
 - **Bonus Paths Claimed:** H (spend < $30 + clean teardown) · C (Custom domain `https://docs4hub.tech` + HTTPS via ACM)
 
 ---
