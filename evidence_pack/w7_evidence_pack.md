@@ -2,22 +2,11 @@
 
 ## 1. Cover
 
-- **Group:** G1 - Group1
-- **Members:**
-- Hoàng Nhật Thành
-- Võ Đức Vũ
-- Nguyễn Quý Hưng
-- Phan Nguyễn Đạt
-- Phan Thị Thủy Hiền
-- Nguyễn Quang Phong
-- Trần Đình Minh Quân
-- Nguyễn Hoàng Huy
-- Phạm Tùng Dương
+- **Group:** Group 1
+- **Members:** Phan Thị Thủy Hiền, Hoàng Nhật Thành, Nguyễn Qúy Hưng, Nguyễn Hoàng Huy, Phạm Tùng Dương, Nguyễn Quang Phong, Trần Đình Minh Quân, Phan Nguyên Đạt, Võ Đức Vũ
 - **Live URL (HTTPS):** `https://docs4hub.tech`
-- **GitHub Repo:** `https://github.com/JaxTheDeveloper/techx_aws_resources/tree/week-7-capstone`
-- **Domain:** C - ProductivityTech ("AI Document Hub")
-- **Total Spend:** `< $0.5` (Eligible for Bonus Path H)
-- **Bonus Paths Claimed:** H (spend < $30 + clean teardown) · C (Custom domain `https://docs4hub.tech` + HTTPS via ACM)
+- **GitHub Repo:** `https://github.com/JaxTheDeveloper/techx_aws_resources/tree/week-7-capstone#`
+- **Total Spend:** `$0.47`
 
 ---
 
@@ -27,7 +16,12 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 - **The Problem:** Legal teams spend too much time searching for specific clauses scattered across dozens of different contract versions.
 - **The AI Solution:** Automating information extraction and summarization based on strictly isolated tenant access rights.
-- **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
+- # **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
+  AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance teams manage, search, and cross-query thousands of contracts and policy documents.
+
+* **The Problem:** Legal teams spend too much time searching for specific clauses scattered across dozens of different contract versions.
+* **The AI Solution:** Automating information extraction and summarization based on strictly isolated tenant access rights.
+* **Real-world parallel:** Our model learns from products like Harvey AI and Glean Workspace, specifically tackling the "document confusion" problem (where the AI mistakenly cites the wrong contract).
 
 ---
 
@@ -37,15 +31,15 @@ AI Document Hub is a multi-tenant SaaS platform that helps legal and compliance 
 
 Our system fulfills all 7 Mandatory Capabilities:
 
-| Mandatory Capability    | Chosen Service                    | Rationale                                                                                                 |
-| :---------------------- | :-------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| **1. User Interface**   | CloudFront + S3 Static            | Provides a free public HTTPS URL, easy to deploy static frontend.                                         |
-| **2. App Compute**      | API Gateway HTTP + Lambda         | HTTP API is cheaper than REST API; Lambda has no idle cost and scales per request.                        |
-| **3. AI / ML**          | Bedrock Agent + KB (Haiku)        | Agent allows calling a Lambda tool to filter documents by `tenant_id` before querying the Knowledge Base. |
-| **4. Data Persistence** | DynamoDB (On-demand)              | Stores document metadata (PK=`tenant_id`, SK=`doc_id`). Optimizes cost and speed for key-value queries.   |
-| **5. Object Storage**   | S3 Bucket (Multi-tenant prefix)   | Stores original PDF files with a `tenant_id/` prefix, Block Public Access enabled.                        |
-| **6. Network**          | VPC + Gateway/Interface Endpoints | Isolates DB (not public-facing); uses Endpoints to call AWS services without NAT Gateway costs.           |
-| **7. Identity**         | Cognito + IAM Least-privilege     | IAM role only grants Read/Write to specific buckets/tables. Cognito issues JWTs to isolate tenants.       |
+| Mandatory Capability    | Chosen Service                  | Rationale                                                                                                    |
+| :---------------------- | :------------------------------ | :----------------------------------------------------------------------------------------------------------- |
+| **1. User Interface**   | CloudFront + S3 Static          | Provides a free public HTTPS URL, easy to deploy static frontend.                                            |
+| **2. App Compute**      | API Gateway HTTP + Lambda       | HTTP API is cheaper than REST API; Lambda has no idle cost and scales per request.                           |
+| **3. AI / ML**          | Bedrock Agent + KB (Haiku)      | Agent allows calling a Lambda tool to filter documents by `tenant_id` before querying the Knowledge Base.    |
+| **4. Data Persistence** | DynamoDB (On-demand)            | Stores document metadata (PK=`tenant_id`, SK=`sk`(docs_id)). Optimizes cost and speed for key-value queries. |
+| **5. Object Storage**   | S3 Bucket (Multi-tenant prefix) | Stores original document files with a `tenant_id/` prefix, Block Public Access enabled.                      |
+| **6. Network**          | VPC + VPC Endpoints             | Isolates DB (not public-facing); uses Endpoints to call AWS services without NAT Gateway costs.              |
+| **7. Identity**         | Cognito + IAM Least-privilege   | IAM role only grants Read/Write to specific buckets/tables. Cognito issues JWTs to isolate tenants.          |
 
 **Chosen Optional Capability:** **Advanced Security (#10)** - KMS CMK encryption for S3 and DynamoDB, with Key Rotation enabled.
 
@@ -178,6 +172,16 @@ Analyze document upload patterns and identify slow operations by calculating ave
 - **EVIDENCE:**
   ![S3 Vectors Cost](../docs/evidence/cost_explorer_s3vectors.png)
 - **TRADE-OFF ACCEPTED:**
+  - # S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
+
+* **ALTERNATIVES CONSIDERED:**
+  - OpenSearch Serverless — Eliminated because: The minimum baseline cost is 2 OCUs, roughly `$27.65` for 48 hours in ap-southeast-1, consuming nearly 29% of the budget and jeopardizing Bonus Path H (under `$30`).
+* **MEASUREMENT:**
+  - S3 Vectors fixed OCU cost = `$0`.
+  - Total actual storage + query cost (50 queries) measured via Cost Explorer = `$0.01`.
+* **EVIDENCE:**
+  ![S3 Vectors Cost](../assets/cost_explorer_s3vectors.png)
+* **TRADE-OFF ACCEPTED:**
   - S3 Vectors lacks the complex query customization and advanced metadata filtering capabilities found in OpenSearch Serverless.
 
 **DECISION 2: Handle Multi-tenant Filtering using a Bedrock Agent Tool instead of direct KB Metadata Filtering.**
@@ -189,6 +193,15 @@ Analyze document upload patterns and identify slow operations by calculating ave
 - **EVIDENCE:**
   ![Agent Latency and Flow](../docs/evidence/agent_latency_cloudwatch.png)
 - **TRADE-OFF ACCEPTED:**
+  - # Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
+
+* **ALTERNATIVES CONSIDERED:**
+  - Direct Bedrock KB (Retrieve) without Agent — Eliminated because: It lacks flexible pre-retrieval filtering logic, making it difficult to enforce strict tenant authorization and increasing the risk of cross-tenant data leakage.
+* **MEASUREMENT:**
+  - "Wrong-document return" rate (tenant A's document returned to tenant B) = `0%` (0/20 test queries) after wrapping the logic in a Lambda action group.
+* **EVIDENCE:**
+  ![Agent Latency and Flow](../assets/agent_latency_cloudwatch.png)
+* **TRADE-OFF ACCEPTED:**
   - Incurred additional InvokeAgent costs and higher system latency compared to standard InvokeModel calls, accepting this to guarantee absolute tenant isolation at the application logic layer.
 
 **DECISION 3: Use Cognito User Pool with Google OAuth + `custom:tenant_id` attribute for multi-tenant identity, instead of hardcoded test users or header-only auth.**
