@@ -436,4 +436,5 @@ Resources deleted in dependency order to avoid API errors:
 9. Delete CloudWatch dashboards, alarms, and log groups
 10. Delete VPC resources last — in order: NACL → Security Groups → VPC Endpoints → Route Table associations → Route Tables → Subnets → VPC
 
-_(Commit `docs/teardown_confirmed.png` showing near-zero Cost Explorer on Monday 2/6 to complete this requirement.)_
+![Teardown Confirmed](../assets/teardown_confirmed.png)
+
