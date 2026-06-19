@@ -25,3 +25,6 @@ override.tf.json
 terraform.rc
 
 .terraform.lock.hcl
+
+# Ignore zip files
+*.zip

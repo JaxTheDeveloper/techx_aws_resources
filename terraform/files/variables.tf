@@ -25,7 +25,6 @@ variable "team_tag" {
 variable "owner_email" {
   description = "Owner email for cost allocation tags"
   type        = string
-  default     = "[EMAIL_ADDRESS]"
 }
 
 # ─── VPC ──────────────────────────────────────────────────────────────────────
@@ -82,7 +81,7 @@ variable "lambda_timeout_sec" {
 variable "bedrock_foundation_model_id" {
   description = "Bedrock foundation model ID for the Agent / KB generate step"
   type        = string
-  default     = "anthropic.claude-haiku-4-5-20251001-v1:0"
+  default     = "anthropic.claude-3-5-haiku-20241022-v1:0"
 }
 
 variable "bedrock_embedding_model_id" {
