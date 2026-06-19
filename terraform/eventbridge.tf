@@ -15,9 +15,9 @@ resource "aws_cloudwatch_event_rule" "s3_to_kb_sync" {
         # Only process PDF/DOCX uploads, not metadata sidecar files
         key = [{
           suffix = ".pdf"
-        }, {
+          }, {
           suffix = ".docx"
-        }, {
+          }, {
           suffix = ".txt"
         }]
       }

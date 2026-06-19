@@ -28,3 +28,7 @@ terraform.rc
 
 # Ignore zip files
 *.zip
+*.rar
+
+# Ignore tfplan
+tfplan

@@ -62,10 +62,10 @@ resource "aws_bedrockagent_data_source" "dochub" {
 # ─── Bedrock Agent ────────────────────────────────────────────────────────────
 
 resource "aws_bedrockagent_agent" "dochub" {
-  agent_name              = "${var.project_name}-agent"
-  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
-  foundation_model        = var.bedrock_foundation_model_id
-  description             = "DocHub document intelligence agent"
+  agent_name                  = "${var.project_name}-agent"
+  agent_resource_role_arn     = aws_iam_role.bedrock_agent_role.arn
+  foundation_model            = var.bedrock_foundation_model_id
+  description                 = "DocHub document intelligence agent"
   idle_session_ttl_in_seconds = 600
 
   instruction = <<-PROMPT

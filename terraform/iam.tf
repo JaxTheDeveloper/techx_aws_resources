@@ -250,10 +250,10 @@ resource "aws_iam_role_policy" "bedrock_agent_permissions" {
         Resource = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:knowledge-base/*"
       },
       {
-        Sid    = "InvokeLambdaActionGroup"
-        Effect = "Allow"
-        Action = ["lambda:InvokeFunction"]
-        Resource = [aws_lambda_function.backend.arn]
+        Sid      = "InvokeLambdaActionGroup"
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = ["arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${var.project_name}-backend"]
       }
     ]
   })
@@ -288,9 +288,9 @@ resource "aws_iam_role_policy" "eventbridge_permissions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid    = "InvokeSyncLambda"
-      Effect = "Allow"
-      Action = ["lambda:InvokeFunction"]
+      Sid      = "InvokeSyncLambda"
+      Effect   = "Allow"
+      Action   = ["lambda:InvokeFunction"]
       Resource = [aws_lambda_function.kb_sync.arn]
     }]
   })

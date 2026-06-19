@@ -252,13 +252,13 @@ resource "aws_lambda_function" "backend" {
 
   environment {
     variables = {
-      DYNAMODB_TABLE        = aws_dynamodb_table.dochub_docs.name
-      S3_BUCKET             = aws_s3_bucket.documents.bucket
-      BEDROCK_KB_ID         = aws_bedrockagent_knowledge_base.dochub.id
-      BEDROCK_AGENT_ID      = aws_bedrockagent_agent.dochub.agent_id
+      DYNAMODB_TABLE         = aws_dynamodb_table.dochub_docs.name
+      S3_BUCKET              = aws_s3_bucket.documents.bucket
+      BEDROCK_KB_ID          = aws_bedrockagent_knowledge_base.dochub.id
+      BEDROCK_AGENT_ID       = aws_bedrockagent_agent.dochub.agent_id
       BEDROCK_AGENT_ALIAS_ID = aws_bedrockagent_agent_alias.dochub.agent_alias_id
-      BEDROCK_MODEL_ARN     = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_foundation_model_id}"
-      AWS_REGION_NAME       = var.aws_region
+      BEDROCK_MODEL_ARN      = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_foundation_model_id}"
+      AWS_REGION_NAME        = var.aws_region
     }
   }
 

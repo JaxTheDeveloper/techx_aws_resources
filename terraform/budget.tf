@@ -40,28 +40,28 @@ resource "aws_budgets_budget" "dochub" {
 
   # Alert at 80% of limit
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = var.budget_alert_pct
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = var.budget_alert_pct
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
 
   # Second alert at 100% (hard cap breach warning)
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = 100
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "ACTUAL"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 100
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "ACTUAL"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
 
   # Forecasted spend alert at 80% — early warning
   notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                  = var.budget_alert_pct
-    threshold_type             = "PERCENTAGE"
-    notification_type          = "FORECASTED"
-    subscriber_sns_topic_arns  = [aws_sns_topic.budget_alerts.arn]
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = var.budget_alert_pct
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "FORECASTED"
+    subscriber_sns_topic_arns = [aws_sns_topic.budget_alerts.arn]
   }
 }

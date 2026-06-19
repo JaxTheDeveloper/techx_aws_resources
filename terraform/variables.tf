@@ -25,7 +25,6 @@ variable "team_tag" {
 variable "owner_email" {
   description = "Owner email for cost allocation tags"
   type        = string
-  default     = "[EMAIL_ADDRESS]"
 }
 
 # ─── VPC ──────────────────────────────────────────────────────────────────────
@@ -39,13 +38,13 @@ variable "vpc_cidr" {
 variable "vpc_az1_private_app_cidr" {
   description = "VPC AZ-1 Private Subnet CIDR"
   type        = string
-  default     = "10.0.10.0/22"
+  default     = "10.0.8.0/22"
 }
 
 variable "vpc_az2_private_app_cidr" {
   description = "VPC AZ-2 Private Subnet CIDR"
   type        = string
-  default     = "10.0.14.0/22"
+  default     = "10.0.12.0/22"
 }
 
 # ─── Cognito / Auth ───────────────────────────────────────────────────────────

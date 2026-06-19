@@ -32,8 +32,6 @@ resource "aws_opensearchserverless_security_policy" "network" {
         Resource     = ["collection/${lower(replace(var.project_name, "_", "-"))}-vectors"]
       }
     ]
-    AllowFromPublic = false
-    SourceVPCEs = []
     # Bedrock accesses OpenSearch Serverless via public endpoint with data access policy
     # This is normal for Bedrock KB integration
     AllowFromPublic = true
