@@ -23,6 +23,7 @@ data "archive_file" "backend" {
     content  = <<-EOF
       import json, os, boto3, base64
       from datetime import datetime, timezone
+      from decimal import Decimal
 
       dynamodb = boto3.resource("dynamodb")
       bedrock  = boto3.client("bedrock-agent-runtime")
@@ -37,6 +38,11 @@ data "archive_file" "backend" {
       s3_client = boto3.client("s3")
       table     = dynamodb.Table(TABLE_NAME)
 
+      def _json_default(obj):
+          if isinstance(obj, Decimal):
+              return int(obj) if obj % 1 == 0 else float(obj)
+          raise TypeError
+
       def _cors(body, status=200):
           return {
               "statusCode": status,
@@ -46,7 +52,7 @@ data "archive_file" "backend" {
                   "Access-Control-Allow-Headers": "Authorization,Content-Type",
                   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
               },
-              "body": json.dumps(body),
+              "body": json.dumps(body, default=_json_default),
           }
 
       def _tenant_id(event):
@@ -55,20 +61,23 @@ data "archive_file" "backend" {
           auth   = ctx.get("authorizer", {})
           claims = auth.get("jwt", {}).get("claims", {})
           groups = claims.get("cognito:groups", "")
-          # Use first group as tenant — matches Pre-Token-Gen Lambda logic
-          if groups:
-              return groups.split(",")[0]
-          # Fallback: custom attribute
+          if isinstance(groups, list):
+              return groups[0] if groups else claims.get("custom:tenant_id", "default")
+          if isinstance(groups, str) and groups:
+              return groups.split(",")[0].strip()
           return claims.get("custom:tenant_id", "default")
 
       def handle_upload(event, tenant_id):
           body    = json.loads(event.get("body") or "{}")
-          doc_id  = body.get("doc_id")
+          doc_id  = body.get("doc_id") or str(__import__("uuid").uuid4())
+          filename = body.get("filename", doc_id)
+          doc_type = body.get("doc_type", "contract")
+          content_type = body.get("content_type", "application/octet-stream")
           s3_key  = f"{tenant_id}/{doc_id}"
           # Presigned URL so frontend uploads directly to S3
           url = s3_client.generate_presigned_url(
               "put_object",
-              Params={"Bucket": S3_BUCKET, "Key": s3_key, "ContentType": "application/pdf"},
+              Params={"Bucket": S3_BUCKET, "Key": s3_key, "ContentType": content_type},
               ExpiresIn=300,
           )
           # Write metadata to DynamoDB
@@ -78,12 +87,12 @@ data "archive_file" "backend" {
               "tenant_id":   tenant_id,
               "doc_id":      doc_id,
               "s3_key":      s3_key,
-              "filename":    body.get("filename", doc_id),
-              "doc_type":    body.get("doc_type", "contract"),
+              "filename":    filename,
+              "doc_type":    doc_type,
               "uploaded_at": datetime.now(timezone.utc).isoformat(),
               "status":      "pending_ingestion",
           })
-          return _cors({"upload_url": url, "doc_id": doc_id})
+          return _cors({"upload_url": url, "doc_id": doc_id, "tenant_id": tenant_id, "filename": filename, "doc_type": doc_type})
 
       def handle_query(event, tenant_id):
           body     = json.loads(event.get("body") or "{}")
@@ -139,20 +148,25 @@ data "archive_file" "backend" {
           return _cors({"docs": result.get("Items", [])})
 
       def lambda_handler(event, context):
-          method = event.get("requestContext", {}).get("http", {}).get("method", "")
-          path   = event.get("rawPath", "")
-          if method == "OPTIONS":
-              return _cors({})
-          tenant_id = _tenant_id(event)
-          if path == "/health":
-              return _cors({"status": "ok", "tenant_id": tenant_id})
-          if path == "/upload" and method == "POST":
-              return handle_upload(event, tenant_id)
-          if path == "/query" and method == "POST":
-              return handle_query(event, tenant_id)
-          if path == "/docs/list" and method == "GET":
-              return handle_list_docs(event, tenant_id)
-          return _cors({"error": "Not found"}, 404)
+          try:
+              method = event.get("requestContext", {}).get("http", {}).get("method", "")
+              path   = event.get("rawPath", "")
+              if method == "OPTIONS":
+                  return _cors({})
+              tenant_id = _tenant_id(event)
+              if path == "/health":
+                  return _cors({"status": "ok", "tenant_id": tenant_id})
+              if path == "/upload" and method == "POST":
+                  return handle_upload(event, tenant_id)
+              if path == "/query" and method == "POST":
+                  return handle_query(event, tenant_id)
+              if path == "/docs/list" and method == "GET":
+                  return handle_list_docs(event, tenant_id)
+              return _cors({"error": "Not found", "path": path}, 404)
+          except Exception as e:
+              import traceback
+              print(traceback.format_exc())
+              return _cors({"error": str(e)}, 500)
     EOF
   }
 }
@@ -252,6 +266,22 @@ resource "aws_lambda_function" "backend" {
 
   environment {
     variables = {
+      # Backend selectors — must match adapter factory keys
+      AI_BACKEND        = "bedrock"
+      STORAGE_BACKEND   = "s3"
+      USERSTORE_BACKEND = "dynamodb"
+      VECTOR_BACKEND    = "bedrock_kb"
+      SERVE_FRONTEND    = "false"
+      CORS_ORIGINS      = "*"
+
+      # Resource references
+      AI_MODEL_ID            = "us.${var.bedrock_foundation_model_id}"
+      STORAGE_BUCKET         = aws_s3_bucket.documents.bucket
+      USERSTORE_TABLE        = aws_dynamodb_table.dochub_docs.name
+      VECTOR_BEDROCK_KB_ID   = aws_bedrockagent_knowledge_base.dochub.id
+      AWS_REGION             = var.aws_region
+
+      # Legacy / compat vars kept for backward compatibility
       DYNAMODB_TABLE         = aws_dynamodb_table.dochub_docs.name
       S3_BUCKET              = aws_s3_bucket.documents.bucket
       BEDROCK_KB_ID          = aws_bedrockagent_knowledge_base.dochub.id

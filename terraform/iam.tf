@@ -84,7 +84,7 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           "${aws_dynamodb_table.dochub_docs.arn}/index/*"
         ]
       },
-      # Bedrock – InvokeModel + Agent + KB retrieve
+      # Bedrock – InvokeModel + Agent + KB retrieve + cross-region inference profiles
       {
         Sid    = "BedrockAccess"
         Effect = "Allow"
@@ -97,9 +97,12 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         ]
         Resource = [
           "arn:aws:bedrock:${var.aws_region}::foundation-model/*",
+          "arn:aws:bedrock:*::foundation-model/*",
           "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent/*",
           "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:knowledge-base/*",
-          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent-alias/*"
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent-alias/*",
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*"
         ]
       },
       # KMS – via CMK for S3 and DynamoDB operations
@@ -237,7 +240,9 @@ resource "aws_iam_role_policy" "bedrock_agent_permissions" {
         Effect = "Allow"
         Action = ["bedrock:InvokeModel"]
         Resource = [
-          "arn:aws:bedrock:${var.aws_region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"
+          "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_foundation_model_id}",
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:${data.aws_caller_identity.current.account_id}:inference-profile/*"
         ]
       },
       {

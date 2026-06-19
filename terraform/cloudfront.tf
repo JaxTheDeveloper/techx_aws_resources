@@ -10,6 +10,37 @@ resource "aws_wafv2_web_acl" "dochub" {
     allow {}
   }
 
+  # Priority 0 — allow all /api/* BEFORE managed rules inspect the body.
+  # Without this, AWSManagedRulesCommonRuleSet blocks POST bodies > 8KB
+  # (SizeRestrictions_BODY), causing large file uploads to return HTML 200.
+  rule {
+    name     = "AllowApiPaths"
+    priority = 0
+    action {
+      allow {}
+    }
+    statement {
+      byte_match_statement {
+        field_to_match {
+          uri_path {}
+        }
+        positional_constraint = "STARTS_WITH"
+        search_string         = "/api/"
+        text_transformation {
+          priority = 0
+          type     = "NONE"
+        }
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "${var.project_name}-allow-api"
+      sampled_requests_enabled   = true
+    }
+  }
+
+  # Priority 1 — OWASP common rules; SizeRestrictions_BODY overridden to Count
+  # so large document uploads are not blocked for non-/api/ paths either.
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 1
@@ -20,6 +51,12 @@ resource "aws_wafv2_web_acl" "dochub" {
       managed_rule_group_statement {
         name        = "AWSManagedRulesCommonRuleSet"
         vendor_name = "AWS"
+        rule_action_override {
+          name = "SizeRestrictions_BODY"
+          action_to_use {
+            count {}
+          }
+        }
       }
     }
     visibility_config {
@@ -29,6 +66,7 @@ resource "aws_wafv2_web_acl" "dochub" {
     }
   }
 
+  # Priority 2 — known bad inputs
   rule {
     name     = "AWSManagedRulesKnownBadInputsRuleSet"
     priority = 2
@@ -67,6 +105,23 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_protocol                  = "sigv4"
 }
 
+# ─── CloudFront Function: strip /api prefix before forwarding to API Gateway ──
+
+resource "aws_cloudfront_function" "strip_api_prefix" {
+  name    = "${var.project_name}-strip-api-prefix"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+function handler(event) {
+    var request = event.request;
+    if (request.uri.startsWith('/api/')) {
+        request.uri = request.uri.substring(4);
+    }
+    return request;
+}
+EOF
+}
+
 # ─── CloudFront Distribution ──────────────────────────────────────────────────
 
 resource "aws_cloudfront_distribution" "dochub" {
@@ -76,6 +131,7 @@ resource "aws_cloudfront_distribution" "dochub" {
   comment             = "${var.project_name} frontend"
   web_acl_id          = aws_wafv2_web_acl.dochub.arn
   price_class         = "PriceClass_200"
+  aliases             = local.use_custom_domain ? [var.custom_domain] : []
 
   # S3 origin — static frontend
   origin {
@@ -128,6 +184,11 @@ resource "aws_cloudfront_distribution" "dochub" {
     min_ttl     = 0
     default_ttl = 0
     max_ttl     = 0
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.strip_api_prefix.arn
+    }
   }
 
   # SPA fallback
@@ -148,8 +209,20 @@ resource "aws_cloudfront_distribution" "dochub" {
     geo_restriction { restriction_type = "none" }
   }
 
-  viewer_certificate {
-    cloudfront_default_certificate = true
+  dynamic "viewer_certificate" {
+    for_each = local.use_custom_domain ? [1] : []
+    content {
+      acm_certificate_arn      = aws_acm_certificate_validation.dochub[0].certificate_arn
+      ssl_support_method       = "sni-only"
+      minimum_protocol_version = "TLSv1.2_2021"
+    }
+  }
+
+  dynamic "viewer_certificate" {
+    for_each = local.use_custom_domain ? [] : [1]
+    content {
+      cloudfront_default_certificate = true
+    }
   }
 
   tags = { Name = "${var.project_name}-cloudfront" }

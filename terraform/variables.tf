@@ -62,6 +62,12 @@ variable "google_oauth_client_secret" {
   default     = ""
 }
 
+variable "custom_domain" {
+  description = "Custom domain for CloudFront (e.g. docs4hub.tech). Leave empty to skip Route 53/ACM."
+  type        = string
+  default     = ""
+}
+
 # ─── Lambda ───────────────────────────────────────────────────────────────────
 
 variable "lambda_memory_mb" {
