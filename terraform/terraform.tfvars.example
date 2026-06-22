@@ -4,9 +4,12 @@ environment  = "hackathon"
 team_tag     = "G1"
 owner_email  = "your-email@example.com"
 
+# Custom domain (Bonus Path C) — requires existing Route 53 hosted zone
+custom_domain = "docs4hub.tech"
+
 vpc_cidr                 = "10.0.0.0/16"
-vpc_az1_private_app_cidr = "10.0.10.0/22"
-vpc_az2_private_app_cidr = "10.0.14.0/22"
+vpc_az1_private_app_cidr = "10.0.8.0/22"
+vpc_az2_private_app_cidr = "10.0.12.0/22"
 
 # Get these from Google Cloud Console → APIs & Services → Credentials
 google_oauth_client_id     = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"

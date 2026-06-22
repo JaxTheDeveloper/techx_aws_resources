@@ -2,7 +2,12 @@
 
 output "cloudfront_url" {
   description = "Public HTTPS URL for the DocHub frontend (share this with trainers)"
-  value       = "https://${aws_cloudfront_distribution.dochub.domain_name}"
+  value       = local.use_custom_domain ? "https://${var.custom_domain}" : "https://${aws_cloudfront_distribution.dochub.domain_name}"
+}
+
+output "custom_domain_url" {
+  description = "Custom domain URL (empty if custom_domain is not configured)"
+  value       = local.use_custom_domain ? "https://${var.custom_domain}" : ""
 }
 
 output "cloudfront_distribution_id" {
@@ -46,7 +51,7 @@ output "cognito_app_client_id" {
 
 output "cognito_login_url" {
   description = "Cognito hosted UI login URL"
-  value       = "https://${aws_cognito_user_pool_domain.dochub.domain}.auth.${var.aws_region}.amazoncognito.com/login?client_id=${aws_cognito_user_pool_client.dochub.id}&response_type=code&scope=openid+email+profile&redirect_uri=https://${aws_cloudfront_distribution.dochub.domain_name}/callback"
+  value       = "https://${aws_cognito_user_pool_domain.dochub.domain}.auth.${var.aws_region}.amazoncognito.com/login?client_id=${aws_cognito_user_pool_client.dochub.id}&response_type=code&scope=openid+email+profile&redirect_uri=${urlencode(local.use_custom_domain ? "https://${var.custom_domain}/callback" : "https://${aws_cloudfront_distribution.dochub.domain_name}/callback")}"
 }
 
 # ─── Network ──────────────────────────────────────────────────────────────────

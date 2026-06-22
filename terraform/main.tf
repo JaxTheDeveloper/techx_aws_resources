@@ -48,4 +48,12 @@ locals {
   az_2        = data.aws_availability_zones.available.names[1]
   account_id  = data.aws_caller_identity.current.account_id
   name_prefix = lower(replace(var.project_name, "_", "-"))
+
+  use_custom_domain = var.custom_domain != ""
+
+  frontend_base_urls = compact([
+    "https://${aws_cloudfront_distribution.dochub.domain_name}",
+    local.use_custom_domain ? "https://${var.custom_domain}" : "",
+    "http://localhost:3000",
+  ])
 }

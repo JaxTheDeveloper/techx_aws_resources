@@ -102,17 +102,17 @@ resource "aws_cognito_user_pool_client" "dochub" {
   )
 
   callback_urls = [
-    "https://${aws_cloudfront_distribution.dochub.domain_name}/callback",
-    "http://localhost:3000/callback",
+    for base in local.frontend_base_urls : "${base}/callback"
   ]
 
   logout_urls = [
-    "https://${aws_cloudfront_distribution.dochub.domain_name}/logout",
-    "http://localhost:3000/logout",
+    for base in local.frontend_base_urls : "${base}/logout"
   ]
 
   enable_token_revocation       = true
   prevent_user_existence_errors = "ENABLED"
+
+  auth_session_validity = 3
 
   explicit_auth_flows = [
     "ALLOW_USER_SRP_AUTH",
