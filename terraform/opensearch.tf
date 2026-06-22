@@ -50,7 +50,7 @@ resource "aws_opensearchserverless_access_policy" "data" {
       {
         ResourceType = "index"
         Resource     = ["index/${lower(replace(var.project_name, "_", "-"))}-vectors/*"]
-        Permission   = ["aoss:CreateIndex", "aoss:DeleteIndex", "aoss:UpdateIndex", "aoss:DescribeIndex", "aoss:ReadDocument", "aoss:WriteDocument"]
+        Permission   = ["aoss:CreateIndex", "aoss:DeleteIndex", "aoss:UpdateIndex", "aoss:DescribeIndex", "aoss:ReadDocument", "aoss:WriteDocument", "aoss:DeleteDocument"]
       },
       {
         ResourceType = "collection"
